@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import onl.continuum.continuum.domain.plan.PlanType;
 import onl.continuum.continuum.domain.subscription.Subscription;
 import onl.continuum.continuum.domain.subscription.SubscriptionRepository;
+import onl.continuum.continuum.infra.security.CustomUserDetails;
 import onl.continuum.continuum.domain.user.User;
 import onl.continuum.continuum.domain.user.UserRepository;
 import org.slf4j.Logger;
