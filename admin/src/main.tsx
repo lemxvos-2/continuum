@@ -8,18 +8,16 @@ type Tab = "metrics" | "users" | "billing";
 function Login({ onDone }: { onDone: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [key, setKey] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   return (
     <form className="card login" onSubmit={async (e) => {
       e.preventDefault(); setBusy(true); setErr("");
-      try { await login(email, password, key); onDone(); } catch (x: any) { setErr(x.message); } finally { setBusy(false); }
+      try { await login(email, password); onDone(); } catch (x: any) { setErr(x.message); } finally { setBusy(false); }
     }}>
       <h1>Continuum Admin</h1>
       <input placeholder="E-mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       <input placeholder="Senha" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-      <input placeholder="Chave de admin" type="password" value={key} onChange={(e) => setKey(e.target.value)} required />
       {err && <p className="err">{err}</p>}
       <button disabled={busy}>{busy ? "Entrando…" : "Entrar"}</button>
     </form>
@@ -112,6 +110,11 @@ function Billing() {
 function App() {
   const [logged, setLogged] = useState(isLoggedIn());
   const [tab, setTab] = useState<Tab>("metrics");
+  useEffect(() => {
+    const out = () => setLogged(false);
+    window.addEventListener("admin-logout", out);
+    return () => window.removeEventListener("admin-logout", out);
+  }, []);
   if (!logged) return <Login onDone={() => setLogged(true)} />;
   return (
     <div className="shell">

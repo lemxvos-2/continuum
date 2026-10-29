@@ -128,9 +128,9 @@ public class AdminController {
     @PatchMapping("/users/{id}/active")
     public Map<String, Object> setActive(HttpServletRequest req, Authentication auth,
                                          @PathVariable String id, @RequestBody Map<String, Boolean> body) {
-        guard(req, auth);
+        User me = guard(req, auth);
         User u = users.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (auth.getName() != null && (auth.getName().equals(u.getEmail()) || auth.getName().equals(u.getId()))) {
+        if (me.getId().equals(u.getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot change your own account");
         }
         u.setActive(Boolean.TRUE.equals(body.get("active")));
