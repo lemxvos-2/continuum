@@ -1,0 +1,22 @@
+{
+  "name": "Continuum",
+  "short_name": "Continuum",
+  "description": "A personal journal app for daily entries, thoughts and connected notes.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#000000",
+  "background_color": "#000000",
+  "categories": [
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ]
+}

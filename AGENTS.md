@@ -1,10 +1,13 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
+# Architecture rules
+- Read project-day entries from the same inclusive range source as the heatmap, filter by project/date, and update the day cache after confirmed mutations so counts and totals reflect saved changes.
+- Gate statistical import suggestions by proper-name capitalization measured against all token uses, lexical prose exclusions and block boundaries; suppress overlapping fragments without sufficient independent mentions, and always let explicit metadata override statistical candidates.
+- Use the dedicated NoteMarkdownExporter at ZIP serialization time for content-only Markdown notes; keep stored editor documents unchanged to preserve editing fidelity.
+- Use Stripe Checkout Sessions with Elements for subscriptions; display Stripe.js localized recurring amounts from the same session used to pay and mount its Currency Selector Element. Let the Dashboard control Adaptive Pricing, and never guess or convert a local price from browser locale.
+- Share one email layout, button helper and token palette across account notifications and welcome emails so branding stays consistent without duplicated templates.
+- Use SmoothDrawer for mobile Notes filters and opt-in Vaul snap points for graph details; reset the compact snap on reopening or changing the selected node to preserve drag-to-expand behavior.
+- Reuse the mobile search input, FilterChips and ListSortMenu on desktop list pages; keep the desktop Notes sidebar non-modal with independent toggle state so filter actions cannot dismiss it.
+- Render the knowledge graph through a dedicated React Three Fiber viewer; keep graph fetching, filters and the existing inspector in the page to preserve the API contract.
+- Use a deterministic procedural brain-shaped network scaffold, separate from real knowledge nodes and links, so sparse graphs retain a recognizable silhouette without inventing user data.
+- Batch graph spheres and connections using instanced meshes and buffer geometry to keep draw calls independent of graph size.
+- Keep graph resolution and pointer events stable during interactions; animate node pulses with shared GPU uniforms and respect reduced motion to avoid per-frame instance rebuilds.
+- Mount quick capture in the Notes search toolbar, not the shared app layout, so it cannot overlap floating creation actions or appear on other pages.
