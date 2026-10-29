@@ -34,16 +34,19 @@ export async function completeGoogleLogin(code: string, state: string, redirectU
 
   token = accessToken;
   localStorage.setItem(GOOGLE_KEY, accessToken);
-  const adminRes = await fetch(`${API}/api/admin/me`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (adminRes.status === 401 || adminRes.status === 403 || adminRes.status === 404) {
+  try {
+    const adminRes = await fetch(`${API}/api/admin/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (adminRes.status === 401 || adminRes.status === 403 || adminRes.status === 404) {
+      throw new Error("Esta conta Google não tem permissão de administrador. Verifique o ADMIN_EMAIL configurado no servidor.");
+    }
+    if (!adminRes.ok) {
+      throw new Error(`Não foi possível validar o acesso administrativo (${adminRes.status})`);
+    }
+  } catch (error) {
     logout();
-    throw new Error("Esta conta Google não tem permissão de administrador. Verifique o ADMIN_EMAIL configurado no servidor.");
-  }
-  if (!adminRes.ok) {
-    logout();
-    throw new Error(`Não foi possível validar o acesso administrativo (${adminRes.status})`);
+    throw error;
   }
 }
 
