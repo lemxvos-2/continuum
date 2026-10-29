@@ -493,7 +493,8 @@ public class InsightsService {
     }
 
     public String cacheKey() {
-        return getCurrentUserId() + ":" + getCurrentVaultId();
+        String ws = onl.continuum.continuum.infra.web.RequestWorkspace.get();
+        return getCurrentUserId() + ":" + getCurrentVaultId() + ":" + (ws != null ? ws : "ALL");
     }
 
     private String getCurrentUserId() {

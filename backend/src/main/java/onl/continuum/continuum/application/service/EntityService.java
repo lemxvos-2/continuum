@@ -196,39 +196,36 @@ public class EntityService {
         // Validação de posse: garante que a entidade pertence ao usuário
         validateOwnership(userId, vaultId, entityId);
         
-        // Busca notas que contenham o ID desta entidade na lista de conexões
+        // Only notes visible in the active workspace (or all when none is active).
         return noteRepo.findByUserId(userId).stream()
                 .filter(n -> n.getEntityIds() != null && n.getEntityIds().contains(entityId))
+                .filter(n -> onl.continuum.continuum.infra.web.RequestWorkspace.matches(n.getWorkspaceIds()))
                 .collect(Collectors.toList());
     }
 
     public List<Entity> getConnections(String userId, String vaultId, String entityId) {
-        User user = getUser(userId);
-        // Validação de posse: garante que a entidade pertence ao usuário
+        getUser(userId);
         validateOwnership(userId, vaultId, entityId);
-        
+
         // Direct links
         List<String> directIds = entityLinkRepo.findByUserIdAndFromEntityId(userId, entityId)
                 .stream().map(EntityLink::getToEntityId).collect(Collectors.toList());
         directIds.addAll(entityLinkRepo.findByUserIdAndToEntityId(userId, entityId)
                 .stream().map(EntityLink::getFromEntityId).collect(Collectors.toList()));
 
-        // Note-based links
-        List<String> noteIdsWithThisEntity = noteRepo.findByUserId(userId).stream()
-                .filter(n -> n.getEntityIds() != null && n.getEntityIds().contains(entityId))
-                .map(Note::getId)
-                .collect(Collectors.toList());
-
+        // Note-based links, only through notes visible in the active workspace
         List<String> connectedEntityIds = noteRepo.findByUserId(userId).stream()
-                .filter(n -> noteIdsWithThisEntity.contains(n.getId()))
+                .filter(n -> n.getEntityIds() != null && n.getEntityIds().contains(entityId))
+                .filter(n -> onl.continuum.continuum.infra.web.RequestWorkspace.matches(n.getWorkspaceIds()))
                 .flatMap(n -> n.getEntityIds().stream())
                 .filter(id -> !id.equals(entityId))
                 .distinct()
                 .collect(Collectors.toList());
 
-        // Combine and deduplicate
         List<String> allIds = Stream.concat(directIds.stream(), connectedEntityIds.stream()).distinct().collect(Collectors.toList());
-        return entityRepo.findByIdInAndArchivedAtIsNull(allIds);
+        return entityRepo.findByIdInAndArchivedAtIsNull(allIds).stream()
+                .filter(e -> onl.continuum.continuum.infra.web.RequestWorkspace.matches(e.getWorkspaceIds()))
+                .collect(Collectors.toList());
     }
 
     @Caching(evict = {
