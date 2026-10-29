@@ -1,12 +1,12 @@
 const API = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+const KEY = "continuum-admin-token";
 
-// Kept only in memory (lost on reload) to reduce exposure to XSS / shared machines.
-let session: { token: string; adminKey: string } | null = null;
+let token: string | null = sessionStorage.getItem(KEY);
 
-export const isLoggedIn = () => session !== null;
-export const logout = () => { session = null; };
+export const isLoggedIn = () => token !== null;
+export const logout = () => { token = null; sessionStorage.removeItem(KEY); };
 
-export async function login(email: string, password: string, adminKey: string) {
+export async function login(email: string, password: string) {
   const res = await fetch(`${API}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -14,28 +14,27 @@ export async function login(email: string, password: string, adminKey: string) {
   });
   if (!res.ok) throw new Error("Credenciais inválidas");
   const data = await res.json();
-  const token = data.accessToken ?? data.token;
-  session = { token, adminKey };
+  token = data.accessToken ?? data.token;
+  sessionStorage.setItem(KEY, token!);
   try {
-    await api("/metrics");
+    await api("/me");
   } catch {
-    session = null;
-    throw new Error("Acesso negado");
+    logout();
+    throw new Error("Esta conta não é a de administrador");
   }
 }
 
 export async function api<T = any>(path: string, init: RequestInit = {}): Promise<T> {
-  if (!session) throw new Error("Sem sessão");
+  if (!token) throw new Error("Sem sessão");
   const res = await fetch(`${API}/api/admin${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.token}`,
-      "X-Admin-Key": session.adminKey,
-      ...(init.headers ?? {}),
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...(init.headers ?? {}) },
   });
-  if (res.status === 401 || res.status === 404) { session = null; throw new Error("Sessão expirada ou acesso negado"); }
+  if (res.status === 401 || res.status === 403 || res.status === 404) {
+    logout();
+    window.dispatchEvent(new Event("admin-logout"));
+    throw new Error("Sessão expirada");
+  }
   if (!res.ok) throw new Error(`Erro ${res.status}`);
   return res.json();
 }

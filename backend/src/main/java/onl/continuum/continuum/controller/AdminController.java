@@ -27,14 +27,11 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 /**
- * Superadmin API used only by the private admin panel.
+ * Admin API used only by the private admin panel.
  *
- * Three independent checks must all pass (defense in depth):
- *  1. Valid JWT whose user has role ADMIN (stored server-side, never client-trusted).
- *  2. Header X-Admin-Key equal to the ADMIN_API_KEY env var (constant-time compare).
- *  3. Optional IP allowlist via ADMIN_ALLOWED_IPS (comma separated).
- * If ADMIN_API_KEY is not configured, every endpoint answers 404 — the panel is disabled by default
- * in self-hosted/open-source installs.
+ * Single-admin model: access requires a valid JWT (normal login) belonging to the one account whose
+ * e-mail matches the ADMIN_EMAIL env var. If ADMIN_EMAIL is not configured, every endpoint answers
+ * 404 — the panel is disabled by default in self-hosted/open-source installs.
  */
 @RestController
 @RequestMapping("/api/admin")
@@ -45,47 +42,36 @@ public class AdminController {
     private final UserRepository users;
     private final SubscriptionRepository subscriptions;
     private final MongoTemplate mongo;
-    private final String adminKey;
-    private final Set<String> allowedIps;
+    private final String adminEmail;
 
     public AdminController(UserRepository users,
                            SubscriptionRepository subscriptions,
                            MongoTemplate mongo,
-                           @Value("${ADMIN_API_KEY:}") String adminKey,
-                           @Value("${ADMIN_ALLOWED_IPS:}") String allowedIps) {
+                           @Value("${ADMIN_EMAIL:}") String adminEmail) {
         this.users = users;
         this.subscriptions = subscriptions;
         this.mongo = mongo;
-        this.adminKey = adminKey == null ? "" : adminKey.trim();
-        this.allowedIps = new HashSet<>();
-        for (String ip : (allowedIps == null ? "" : allowedIps).split(",")) {
-            if (!ip.isBlank()) this.allowedIps.add(ip.trim());
-        }
+        this.adminEmail = adminEmail == null ? "" : adminEmail.trim().toLowerCase(Locale.ROOT);
     }
 
-    private void guard(HttpServletRequest req, Authentication auth) {
-        if (adminKey.length() < 32) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        String ip = clientIp(req);
-        if (!allowedIps.isEmpty() && !allowedIps.contains(ip)) {
-            log.warn("[admin] blocked IP {}", ip);
+    private User guard(HttpServletRequest req, Authentication auth) {
+        if (adminEmail.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        User me = null;
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails cud) {
+            me = users.findById(cud.getUserId()).orElse(null);
+        }
+        if (me == null || me.getEmail() == null
+                || !adminEmail.equals(me.getEmail().trim().toLowerCase(Locale.ROOT))) {
+            log.warn("[admin] denied access from {}", req.getRemoteAddr());
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
-        boolean isAdmin = auth != null && auth.getAuthorities().stream()
-                .anyMatch(a -> "ROLE_ADMIN".equalsIgnoreCase(a.getAuthority()));
-        String key = Optional.ofNullable(req.getHeader("X-Admin-Key")).orElse("");
-        boolean keyOk = MessageDigest.isEqual(
-                key.getBytes(StandardCharsets.UTF_8), adminKey.getBytes(StandardCharsets.UTF_8));
-        if (!isAdmin || !keyOk) {
-            log.warn("[admin] denied access from {} (role={}, key={})", ip, isAdmin, keyOk);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
-        log.info("[admin] {} {} by {} from {}", req.getMethod(), req.getRequestURI(), auth.getName(), ip);
+        return me;
     }
 
-    private static String clientIp(HttpServletRequest req) {
-        String fwd = req.getHeader("X-Forwarded-For");
-        if (fwd != null && !fwd.isBlank()) return fwd.split(",")[0].trim();
-        return req.getRemoteAddr();
+    @GetMapping("/me")
+    public Map<String, Object> me(HttpServletRequest req, Authentication auth) {
+        User me = guard(req, auth);
+        return Map.of("email", me.getEmail(), "username", me.getUsername());
     }
 
     // ---------- Metrics & health ----------
@@ -142,9 +128,9 @@ public class AdminController {
     @PatchMapping("/users/{id}/active")
     public Map<String, Object> setActive(HttpServletRequest req, Authentication auth,
                                          @PathVariable String id, @RequestBody Map<String, Boolean> body) {
-        guard(req, auth);
+        User me = guard(req, auth);
         User u = users.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (auth.getName() != null && (auth.getName().equals(u.getEmail()) || auth.getName().equals(u.getId()))) {
+        if (me.getId().equals(u.getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot change your own account");
         }
         u.setActive(Boolean.TRUE.equals(body.get("active")));
