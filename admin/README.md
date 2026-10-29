@@ -19,6 +19,10 @@ npm run dev            # http://localhost:5174
 
 Qualquer outra conta recebe 404. Sem `ADMIN_EMAIL`, a API de admin fica desligada.
 O login Google é validado em `/api/admin/me`; contas sem permissão não mantêm o token.
+O login por e-mail e senha fica oculto por padrão. Para exibi-lo em um build de
+desenvolvimento, configure `VITE_DEV_MODE=true` no arquivo `.env` do painel e reinicie
+o servidor/build. Essa opção controla somente a interface do painel e não altera as regras
+de autenticação do backend.
 
 ### Testes locais
 
