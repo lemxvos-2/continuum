@@ -12,3 +12,4 @@
 - Keep graph resolution and pointer events stable during interactions; animate node pulses with shared GPU uniforms and respect reduced motion to avoid per-frame instance rebuilds.
 - Mount quick capture in the Notes search toolbar, not the shared app layout, so it cannot overlap floating creation actions or appear on other pages.
 - Apply the active-workspace filter (RequestWorkspace.matches) to every read path — lists before pagination, backlinks, entity notes/connections — and include the workspace in server cache keys and client suggestion caches, so no data leaks between workspaces.
+- Keep the superadmin UI in the standalone admin/ app (destined for a private repo); /api/admin requires ROLE_ADMIN + ADMIN_API_KEY header (+ optional IP allowlist) and returns 404 when unconfigured, so self-hosted installs expose nothing.
