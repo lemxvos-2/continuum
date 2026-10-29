@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { api, isLoggedIn, login, logout } from "./api";
+import { api, completeGoogleLogin, getGoogleLoginUrl, isLoggedIn, login, logout } from "./api";
 import "./styles.css";
 
 type Tab = "metrics" | "users" | "billing";
@@ -10,17 +10,60 @@ function Login({ onDone }: { onDone: () => void }) {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
   return (
     <form className="card login" onSubmit={async (e) => {
       e.preventDefault(); setBusy(true); setErr("");
       try { await login(email, password); onDone(); } catch (x: any) { setErr(x.message); } finally { setBusy(false); }
     }}>
       <h1>Continuum Admin</h1>
+      <button type="button" className="google-login" disabled={googleBusy} onClick={async () => {
+        setGoogleBusy(true); setErr("");
+        try { window.location.href = await getGoogleLoginUrl(); } catch (x: any) { setErr(x.message); setGoogleBusy(false); }
+      }}>
+        <svg aria-hidden="true" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5Z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.76 7.18l7.73 6C44.42 38.03 46.98 31.85 46.98 24.55Z"/><path fill="#FBBC05" d="M10.53 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.2A23.9 23.9 0 0 0 0 24c0 3.87.93 7.52 2.56 10.78l7.97-6.19Z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6c-2.14 1.44-4.89 2.3-8.18 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48Z"/></svg>
+        {googleBusy ? "Redirecionando…" : "Entrar com Google"}
+      </button>
+      <div className="login-divider"><span>ou entre com e-mail</span></div>
       <input placeholder="E-mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       <input placeholder="Senha" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       {err && <p className="err">{err}</p>}
       <button disabled={busy}>{busy ? "Entrando…" : "Entrar"}</button>
     </form>
+  );
+}
+
+function GoogleCallback() {
+  const started = useRef(false);
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const state = params.get("state");
+    if (!code || !state) {
+      setErr("Não foi possível concluir o login: faltam parâmetros do Google.");
+      setLoading(false);
+      return;
+    }
+
+    completeGoogleLogin(code, state, `${window.location.origin}/google-callback`)
+      .then(() => { window.location.replace("/"); })
+      .catch((error: unknown) => {
+        setErr(error instanceof Error ? error.message : "Não foi possível concluir o login com Google.");
+        setLoading(false);
+      });
+  }, []);
+
+  return (
+    <div className="card login">
+      <h1>Continuum Admin</h1>
+      {loading ? <p>Validando sua conta Google…</p> : <p className="err">{err}</p>}
+      {!loading && <button onClick={() => { window.location.href = "/"; }}>Voltar ao login</button>}
+    </div>
   );
 }
 
@@ -107,7 +150,7 @@ function Billing() {
   );
 }
 
-function App() {
+function Dashboard() {
   const [logged, setLogged] = useState(isLoggedIn());
   const [tab, setTab] = useState<Tab>("metrics");
   useEffect(() => {
@@ -132,6 +175,10 @@ function App() {
       <main>{tab === "metrics" ? <Metrics /> : tab === "users" ? <Users /> : <Billing />}</main>
     </div>
   );
+}
+
+function App() {
+  return window.location.pathname === "/google-callback" ? <GoogleCallback /> : <Dashboard />;
 }
 
 createRoot(document.getElementById("root")!).render(<React.StrictMode><App /></React.StrictMode>);

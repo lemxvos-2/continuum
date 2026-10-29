@@ -11,12 +11,35 @@ npm run dev            # http://localhost:5174
 
 ## Acesso (um único administrador)
 1. No servidor, defina `ADMIN_EMAIL=voce@exemplo.com`.
-2. Entre no painel com o e-mail e a senha dessa conta (login normal com JWT).
-   A conta precisa ter senha cadastrada (contas criadas só com Google não têm).
-3. Adicione o domínio do painel em `CORS_ALLOWED_ORIGINS` do backend.
+2. No servidor, defina `ADMIN_FRONTEND_URL=https://admin.continuum.onl` e inclua
+   `https://admin.continuum.onl` em `CORS_ALLOWED_ORIGINS`.
+3. Configure `https://admin.continuum.onl/google-callback` como Authorized redirect URI
+   no Google Cloud Console. O painel também aceita login Google, sem senha cadastrada.
+4. Configure `VITE_API_URL=https://sua-api.onrender.com` no build do painel.
 
 Qualquer outra conta recebe 404. Sem `ADMIN_EMAIL`, a API de admin fica desligada.
-A sessão fica salva só na aba (sessionStorage) e expira junto com o token.
+O login Google é validado em `/api/admin/me`; contas sem permissão não mantêm o token.
+
+### Testes locais
+
+O comando `npm run dev` serve o painel em `http://localhost:5174`. Para testar OAuth
+localmente, defina `ADMIN_FRONTEND_URL=http://localhost:5174` no backend e adicione
+`http://localhost:5174/google-callback` às Authorized redirect URIs no Google Cloud
+Console. Se executar o painel em outra porta, use essa mesma origem nos dois lugares.
+
+Variáveis do backend para produção:
+
+```text
+ADMIN_EMAIL=seu-email@gmail.com
+ADMIN_FRONTEND_URL=https://admin.continuum.onl
+CORS_ALLOWED_ORIGINS=https://continuum.onl,https://admin.continuum.onl
+```
+
+Variável do frontend admin:
+
+```text
+VITE_API_URL=https://sua-api.onrender.com
+```
 
 ## Funcionalidades
 - Métricas: usuários, ativos, novos 7d/30d, notas, entidades, workspaces, usuários por plano, saúde do servidor

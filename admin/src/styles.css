@@ -8,6 +8,10 @@ button.sm { padding:5px 10px; font-size:12px; background:var(--line); color:var(
 .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
 .login { max-width:340px; margin:12vh auto; display:grid; gap:12px; }
 .login h1 { margin:0 0 8px; font-size:20px; }
+.google-login { display:flex; align-items:center; justify-content:center; gap:10px; background:#fff; color:#202124; }
+.google-login svg { width:18px; height:18px; }
+.login-divider { display:flex; align-items:center; gap:10px; color:var(--mut); font-size:12px; }
+.login-divider::before, .login-divider::after { content:""; height:1px; flex:1; background:var(--line); }
 .err { color:var(--err); }
 .shell header { display:flex; align-items:center; gap:24px; padding:14px 24px; border-bottom:1px solid var(--line); }
 .shell nav { display:flex; gap:6px; flex:1; }
