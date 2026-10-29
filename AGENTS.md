@@ -11,3 +11,4 @@
 - Batch graph spheres and connections using instanced meshes and buffer geometry to keep draw calls independent of graph size.
 - Keep graph resolution and pointer events stable during interactions; animate node pulses with shared GPU uniforms and respect reduced motion to avoid per-frame instance rebuilds.
 - Mount quick capture in the Notes search toolbar, not the shared app layout, so it cannot overlap floating creation actions or appear on other pages.
+- Apply the active-workspace filter (RequestWorkspace.matches) to every read path — lists before pagination, backlinks, entity notes/connections — and include the workspace in server cache keys and client suggestion caches, so no data leaks between workspaces.
