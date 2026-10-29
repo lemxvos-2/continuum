@@ -285,10 +285,10 @@ public class EntityService {
         User user = getUser(userId);
         LocalDate effectiveStart = startDate != null ? startDate : getDefaultStartDate(user);
         LocalDate effectiveEnd = endDate != null ? endDate : onl.continuum.continuum.infra.web.RequestZone.today();
-        // Note: EntityRepository needs a method to filter by createdAt between start and end
-        // For now, assume we filter in memory or add to repo
-        Page<Entity> all = entityRepo.findByUserId(userId, pageable);
-        List<Entity> filtered = all.getContent().stream()
+        // Filter by workspace BEFORE paginating, so pages are never empty/truncated
+        // because of items that belong to another workspace.
+        List<Entity> filtered = entityRepo.findByUserId(userId).stream()
+                .filter(e -> onl.continuum.continuum.infra.web.RequestWorkspace.matches(e.getWorkspaceIds()))
                 .filter(e -> {
                     if (e.getCreatedAt() == null) return true;
                     // Resolve the creation day in the CALLER's timezone, otherwise entities
@@ -299,8 +299,12 @@ public class EntityService {
                     return (effectiveStart == null || !created.isBefore(effectiveStart)) &&
                            !created.isAfter(effectiveEnd);
                 })
+                .sorted(java.util.Comparator.comparing(Entity::getCreatedAt,
+                        java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
                 .collect(Collectors.toList());
-        return new org.springframework.data.domain.PageImpl<>(filtered, pageable, all.getTotalElements());
+        int from = (int) Math.min((long) pageable.getPageNumber() * pageable.getPageSize(), filtered.size());
+        int to = Math.min(from + pageable.getPageSize(), filtered.size());
+        return new org.springframework.data.domain.PageImpl<>(filtered.subList(from, to), pageable, filtered.size());
     }
     
     /**
