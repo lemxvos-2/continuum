@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, type Context } from "react";
 import { mergeModules } from "@/i18n";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -22,7 +22,7 @@ interface LanguageContextType {
 // Reuse one context across hot reloads: a re-evaluated module would otherwise create a
 // second context, and consumers like UpdateDialog would crash "outside" the provider.
 const contextStore = globalThis as typeof globalThis & {
-  __continuumLanguageContext?: React.Context<LanguageContextType | undefined>;
+  __continuumLanguageContext?: Context<LanguageContextType | undefined>;
 };
 const LanguageContext =
   contextStore.__continuumLanguageContext ??
