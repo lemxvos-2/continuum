@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Drawer,
   DrawerContent,
@@ -132,6 +133,7 @@ export function WorkspaceSwitcher({
   const [name, setName] = useState("");
   const [color, setColor] = useState(WORKSPACE_COLORS[0]);
   const [busy, setBusy] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Workspace | null>(null);
   const menuOpen = open ?? internalOpen;
   const handleOpenChange = (nextOpen: boolean) => {
     if (open === undefined) setInternalOpen(nextOpen);
@@ -172,10 +174,13 @@ export function WorkspaceSwitcher({
   };
 
   const remove = async (w: Workspace) => {
-    if (!window.confirm(s.confirmDelete(w.name))) return;
     try {
       await workspacesApi.delete(w.id);
       qc.setQueryData<Workspace[]>(WORKSPACES_KEY, (prev) => (prev ?? []).filter((x) => x.id !== w.id));
+      // Items lost a workspace id; refresh lists so "Main" shows them again.
+      qc.invalidateQueries({ queryKey: ["notes"] });
+      qc.invalidateQueries({ queryKey: ["entities"] });
+      qc.invalidateQueries({ queryKey: ["graph"] });
       if (active === w.id) setActiveWorkspace(null);
     } catch {
       toast.error(s.error);
@@ -222,7 +227,7 @@ export function WorkspaceSwitcher({
               <button
                 type="button"
                 aria-label={s.delete}
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); void remove(w); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleOpenChange(false); setPendingDelete(w); }}
                 className="rounded p-0.5 text-muted-foreground opacity-60 hover:text-destructive group-hover:opacity-100"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -267,6 +272,21 @@ export function WorkspaceSwitcher({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        onOpenChange={(o) => { if (!o) setPendingDelete(null); }}
+        title={pendingDelete ? s.confirmDelete(pendingDelete.name) : ""}
+        description={s.confirmDeleteDesc}
+        confirmText={s.delete}
+        cancelText={s.cancel}
+        destructive
+        onConfirm={async () => {
+          const w = pendingDelete;
+          setPendingDelete(null);
+          if (w) await remove(w);
+        }}
+      />
     </>
   );
 }
