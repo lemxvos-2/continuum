@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, type Context } from "react";
 import { mergeModules } from "@/i18n";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -19,7 +19,14 @@ interface LanguageContextType {
   t: (key: string, vars?: Record<string, string | number>) => string;
 }
 
-const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+// Reuse one context across hot reloads: a re-evaluated module would otherwise create a
+// second context, and consumers like UpdateDialog would crash "outside" the provider.
+const contextStore = globalThis as typeof globalThis & {
+  __continuumLanguageContext?: Context<LanguageContextType | undefined>;
+};
+const LanguageContext =
+  contextStore.__continuumLanguageContext ??
+  (contextStore.__continuumLanguageContext = createContext<LanguageContextType | undefined>(undefined));
 
 function isLanguage(value: unknown): value is Language {
   return value === "en" || value === "es" || value === "pt" || value === "fr";
