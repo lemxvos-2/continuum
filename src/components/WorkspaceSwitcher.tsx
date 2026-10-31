@@ -37,11 +37,12 @@ import { toast } from "sonner";
 
 export const WORKSPACES_KEY = ["workspaces", "list"] as const;
 
-export function useWorkspaces() {
+export function useWorkspaces(enabled = true) {
   return useQuery({
     queryKey: WORKSPACES_KEY,
     queryFn: () => workspacesApi.list().then((r) => r.data ?? []),
     staleTime: 5 * 60_000,
+    enabled,
   });
 }
 

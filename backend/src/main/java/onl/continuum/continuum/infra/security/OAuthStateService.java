@@ -62,8 +62,6 @@ public class OAuthStateService {
                 .setSubject("google-oauth")
                 .claim("type", STATE_TYPE)
                 .claim("nonce", nonce)
-                // IMPORTANTE: guardamos a URL EXATA enviada ao Google na etapa 1.
-                // O Google exige que a etapa 2 (troca do code) use a mesma string.
                 .claim("redirectUri", redirectUri)
                 .claim("platform", normalizedPlatform)
                 .setIssuedAt(new Date())

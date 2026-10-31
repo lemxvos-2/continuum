@@ -5,6 +5,8 @@ import { resetAllCaches } from "@/lib/query-client";
 const KEY = "continuum:workspace";
 const listeners = new Set<() => void>();
 
+export const FREE_WORKSPACE_TOTAL_LIMIT = 2;
+
 let current: string | null = (() => {
   try {
     return localStorage.getItem(KEY) || null;
