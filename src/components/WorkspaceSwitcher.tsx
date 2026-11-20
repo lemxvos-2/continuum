@@ -318,36 +318,47 @@ export function WorkspaceSwitcher({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={creating} onOpenChange={setCreating}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{s.create}</DialogTitle>
-          </DialogHeader>
-          <Input
-            autoFocus
-            value={name}
-            maxLength={60}
-            placeholder={s.placeholder}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") void create(); }}
-          />
-          <div className="flex gap-2">
-            {WORKSPACE_COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                aria-label={c}
-                onClick={() => setColor(c)}
-                className={cn("h-7 w-7 rounded-full ring-offset-2 ring-offset-background transition", color === c && "ring-2 ring-foreground/60")}
-                style={{ backgroundColor: c }}
-              />
-            ))}
+      <Drawer open={creating} onOpenChange={setCreating}>
+        <DrawerContent className="max-h-[85dvh] gap-0">
+          <DrawerHeader className="shrink-0 px-5 pb-3 text-left">
+            <DrawerTitle className="font-serif">{s.create}</DrawerTitle>
+          </DrawerHeader>
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 pb-4">
+            <Input
+              value={name}
+              maxLength={60}
+              placeholder={s.placeholder}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") void create(); }}
+              className="h-11"
+            />
+            <div className="grid grid-cols-6 justify-items-center gap-3">
+              {WORKSPACE_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  aria-label={c}
+                  aria-pressed={color === c}
+                  onClick={() => setColor(c)}
+                  className={cn("h-9 w-9 rounded-full ring-offset-2 ring-offset-background transition", color === c && "ring-2 ring-foreground/60")}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
           </div>
-          <DialogFooter>
-            <Button onClick={create} disabled={busy || !name.trim()}>{s.createButton}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <DrawerFooter
+            className="shrink-0 flex-row justify-end border-t border-border/10 px-5 pt-3"
+            style={{ paddingBottom: "calc(1rem + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))" }}
+          >
+            <Button type="button" variant="ghost" className="flex-1" onClick={() => setCreating(false)}>
+              {s.cancel}
+            </Button>
+            <Button type="button" className="flex-1" onClick={() => void create()} disabled={busy || !name.trim()}>
+              {s.createButton}
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       <Dialog open={pendingRename !== null} onOpenChange={(o) => { if (!o) setPendingRename(null); }}>
         <DialogContent className="max-w-sm">
