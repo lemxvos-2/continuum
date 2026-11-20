@@ -147,19 +147,19 @@ export const dict: Module = {
   },
 
   es: {
-    lp_metaTitle: "Continuum — App de Diario Personal",
+    lp_metaTitle: "Continuum — App de Journal Personal",
     lp_metaDescription:
-      "Continuum es una app de diario personal para registrar tus días, pensamientos y recuerdos. Escribe en markdown, conecta personas y proyectos y revisita tu historia.",
+      "Continuum es una app de journal personal para registrar tus días, pensamientos y recuerdos. Escribe en markdown, conecta personas y proyectos y revisita tu historia.",
 
     lp_nav_signIn: "Entrar con Google",
     lp_accountDeletedTitle: "Cuenta eliminada",
     lp_accountDeletedDescription: "Tu cuenta y sus datos se eliminaron permanentemente.",
 
     lp_hero_badge: "Continuum",
-    lp_hero_title: "Tu diario personal,",
+    lp_hero_title: "Tu journal personal,",
     lp_hero_subtitle: "sin fricción.",
     lp_hero_description:
-      "Una app de diario para tus días, pensamientos y recuerdos. Escribe entradas en markdown, conecta personas y proyectos con menciones y sincroniza tu diario entre dispositivos.",
+      "Una app de journal para tus días, pensamientos y recuerdos. Escribe entradas en markdown, conecta personas y proyectos con menciones y sincroniza tu journal entre dispositivos.",
     lp_hero_cta: "Empezar gratis",
 
     lp_connect_badge: "Conexiones",
@@ -200,7 +200,7 @@ export const dict: Module = {
     lp_faq_title: "Preguntas sobre Continuum",
     lp_faq_q1: "¿Qué es Continuum?",
     lp_faq_a1:
-      "Continuum es una app de diario personal. Registra tus días, pensamientos y recuerdos en markdown, enlaza entradas con @menciones y explora conexiones entre personas, proyectos e ideas.",
+      "Continuum es una app de journal personal. Registra tus días, pensamientos y recuerdos en markdown, enlaza entradas con @menciones y explora conexiones entre personas, proyectos e ideas.",
     lp_faq_q2: "¿Es una buena alternativa a Obsidian?",
     lp_faq_a2:
       "Sí. Continuum mantiene el pensamiento enlazado y los enlaces inversos, y añade sincronización nativa gratis, una interfaz mobile-first y un score que recupera notas olvidadas, sin plugins que configurar.",
@@ -287,19 +287,19 @@ export const dict: Module = {
   },
 
   pt: {
-    lp_metaTitle: "Continuum — App de Diário Pessoal",
+    lp_metaTitle: "Continuum — App de Journal Pessoal",
     lp_metaDescription:
-      "O Continuum é um app de diário pessoal para registrar seus dias, pensamentos e memórias. Escreva em markdown, conecte pessoas e projetos e revisite sua história.",
+      "O Continuum é um app de journal pessoal para registrar seus dias, pensamentos e memórias. Escreva em markdown, conecte pessoas e projetos e revisite sua história.",
 
     lp_nav_signIn: "Entrar",
     lp_accountDeletedTitle: "Conta excluída",
     lp_accountDeletedDescription: "Sua conta e os dados foram excluídos permanentemente.",
 
     lp_hero_badge: "Continuum",
-    lp_hero_title: "Seu diário pessoal,",
+    lp_hero_title: "Seu journal pessoal,",
     lp_hero_subtitle: "sem atrito.",
     lp_hero_description:
-      "Um app de diário para seus dias, pensamentos e memórias. Escreva registros em markdown, conecte pessoas e projetos com menções e sincronize seu diário entre dispositivos.",
+      "Um app de journal para seus dias, pensamentos e memórias. Escreva registros em markdown, conecte pessoas e projetos com menções e sincronize seu journal entre dispositivos.",
     lp_hero_cta: "Começar grátis",
 
     lp_connect_badge: "Conexões",
@@ -340,7 +340,7 @@ export const dict: Module = {
     lp_faq_title: "Dúvidas sobre o Continuum",
     lp_faq_q1: "O que é o Continuum?",
     lp_faq_a1:
-      "O Continuum é um app de diário pessoal. Registre seus dias, pensamentos e memórias em markdown, conecte registros com @menções e explore relações entre pessoas, projetos e ideias.",
+      "O Continuum é um app de journal pessoal. Registre seus dias, pensamentos e memórias em markdown, conecte registros com @menções e explore relações entre pessoas, projetos e ideias.",
     lp_faq_q2: "O Continuum é uma boa alternativa ao Obsidian?",
     lp_faq_a2:
       "Sim. Ele mantém o pensamento conectado e os backlinks, e adiciona sincronização nativa grátis, interface mobile-first e um score que faz notas esquecidas reaparecerem — sem plugins para configurar.",

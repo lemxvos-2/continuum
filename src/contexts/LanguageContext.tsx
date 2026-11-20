@@ -493,7 +493,7 @@ const es: Dict = {
   projects_subtitle: "Sigue tus actividades y hitos de proyecto.",
 
   insights_title: "Análisis",
-  insights_subtitle: "Patrones de tu diario.",
+  insights_subtitle: "Patrones de tu journal.",
 
   graph_title: "Grafo de conocimiento",
   graph_empty: "Sin datos para mostrar en el grafo.",
@@ -828,7 +828,7 @@ const pt: Dict = {
   projects_subtitle: "Acompanhe as atividades e marcos dos seus projetos.",
 
   insights_title: "Insights",
-  insights_subtitle: "Padrões do seu diário.",
+  insights_subtitle: "Padrões do seu journal.",
 
   graph_title: "Grafo de conhecimento",
   graph_empty: "Sem dados para exibir no grafo.",
