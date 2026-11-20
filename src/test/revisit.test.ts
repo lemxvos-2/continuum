@@ -33,3 +33,11 @@ describe("revisit", () => {
     expect(pickShuffle(notes, { ...st, archived: ["b"] }, "u", 0, now)).toBeNull();
   });
 });
+
+import { coOccurrences } from "@/lib/revisit";
+describe("coOccurrences", () => {
+  it("needs 3 shared notes and computes percent of self notes", () => {
+    const notes = [{ entityIds: ["a", "x", "y"] }, { entityIds: ["a", "x", "y"] }, { entityIds: ["a", "x"] }, { entityIds: ["a"] }, { entityIds: ["a"] }];
+    expect(coOccurrences("a", notes)).toEqual([{ id: "x", count: 3, pct: 60 }]);
+  });
+});

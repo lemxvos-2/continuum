@@ -1,3 +1,4 @@
+import { coOccurrences } from "@/lib/revisit";
 import { useEffect, useState } from "react";
 import { useIsRestoring } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -37,7 +38,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface EntityData { id: string; title: string; type: string; description?: string; trackingDates?: string[]; createdAt: string; workspaceIds?: string[]; }
 
-interface RelatedNote { id: string; title: string; createdAt: string; updatedAt: string; }
+interface RelatedNote { id: string; title: string; createdAt: string; updatedAt: string; entityIds?: string[] }
 
 const entityTitleClassName = "w-full min-w-0 font-serif text-3xl leading-tight tracking-tight text-foreground sm:text-5xl";
 
@@ -394,6 +395,24 @@ export default function EntityDetail() {
           </Button>
         )}
       </EntitySection>
+
+      {(() => {
+        const names = new Map(relatedEntities.map((e) => [e.id, e.title]));
+        const co = coOccurrences(entity.id, relatedNotes).filter((c) => names.has(c.id)).slice(0, 4);
+        if (!co.length) return null;
+        const label = ({ pt: "Aparece junto com frequência", en: "Often appears with", es: "Aparece junto con frecuencia", fr: "Apparaît souvent avec" } as Record<string, string>)[language] ?? "Often appears with";
+        return (
+          <EntitySection title={label}>
+            <div className="flex flex-wrap gap-2 px-1">
+              {co.map((c) => (
+                <Button key={c.id} variant="outline" size="sm" className="rounded-full" onClick={() => navigate(`/entities/${c.id}`)}>
+                  {names.get(c.id)} <span className="text-muted-foreground">{c.pct}%</span>
+                </Button>
+              ))}
+            </div>
+          </EntitySection>
+        );
+      })()}
 
       <EntitySection title={t("ent_connected_entities")} aside={relatedEntities.length}>
         <div className="px-1">

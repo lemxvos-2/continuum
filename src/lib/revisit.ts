@@ -77,3 +77,11 @@ export function appendThought(content: unknown, thought: string, date: string): 
   const doc = parseTiptapContent(content);
   return { ...doc, content: [...(doc.content ?? []), { type: "paragraph", content: [{ type: "text", text: `${date} — ${thought}` }] }] };
 }
+
+/** Entities co-occurring with `selfId` in at least `min` notes; pct = shared / notes of self. */
+export function coOccurrences(selfId: string, notes: { entityIds?: string[] }[], min = 3) {
+  const counts = new Map<string, number>();
+  for (const n of notes) for (const e of new Set(n.entityIds ?? [])) if (e !== selfId) counts.set(e, (counts.get(e) ?? 0) + 1);
+  return [...counts].filter(([, c]) => c >= min).sort((a, b) => b[1] - a[1])
+    .map(([id, count]) => ({ id, count, pct: Math.round((count / Math.max(notes.length, 1)) * 100) }));
+}
