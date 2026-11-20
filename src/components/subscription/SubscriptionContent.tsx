@@ -1,5 +1,6 @@
 import { AdaptiveCheckoutDialog } from "@/components/subscription/AdaptiveCheckoutDialog";
 import { useAdaptiveCheckout } from "@/hooks/useAdaptiveCheckout";
+import { readCachedAdaptivePrice } from "@/lib/adaptive-price-cache";
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
 import { subscriptionApi } from "@/lib/api";
@@ -31,7 +32,7 @@ export default function SubscriptionContent({ open, onClose }: SubscriptionConte
   const { user } = useAuth();
   const { usage } = useUsage();
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { theme } = useTheme();
   const workspacesQuery = useWorkspaces(open);
   const [sub, setSub] = useState<SubInfo | null>(null);
@@ -155,9 +156,12 @@ export default function SubscriptionContent({ open, onClose }: SubscriptionConte
             features={visionBenefits.map((text) => ({ text }))}
             pricingOptions={[{
               id: "monthly",
-              price: adaptiveCheckout.price === "…" ? t("bill_price_localized_in_checkout") : adaptiveCheckout.price,
-              period: t("bill_per_month"),
-              loading: adaptiveCheckout.loading && adaptiveCheckout.price === "…",
+              // VISION members never open checkout: show the last localized price seen, or the active plan.
+              price: isPro
+                ? (readCachedAdaptivePrice(language) ?? "VISION ✓")
+                : adaptiveCheckout.price === "…" ? t("bill_price_localized_in_checkout") : adaptiveCheckout.price,
+              period: isPro && !readCachedAdaptivePrice(language) ? "" : t("bill_per_month"),
+              loading: !isPro && adaptiveCheckout.loading && adaptiveCheckout.price === "…",
               loadingLabel: t("bill_price_refreshing"),
             }]}
             defaultPlanId="monthly"

@@ -85,6 +85,47 @@ function getRecurringPrice(session: CheckoutSession): string {
   return amount;
 }
 
+type SharedSession = { instance: CheckoutSdk; actions: CheckoutActions; price: string };
+// One Stripe session per language, shared by every price surface and reused for a while,
+// so opening a modal never waits for a new session to be created.
+const SESSION_REUSE_MS = 20 * 60 * 1000;
+const sharedSessions = new Map<Language, { promise: Promise<SharedSession>; createdAt: number }>();
+
+function getSharedSession(language: Language, theme: string, fresh = false): Promise<SharedSession> {
+  const existing = sharedSessions.get(language);
+  if (!fresh && existing && Date.now() - existing.createdAt < SESSION_REUSE_MS) return existing.promise;
+
+  const promise = (async () => {
+    const [checkoutResponse, stripe] = await Promise.all([
+      subscriptionApi.checkoutEmbedded("VISION"),
+      getStripeClient(language),
+    ]);
+    const { data } = checkoutResponse;
+    if (!data.clientSecret) throw new Error("Stripe did not return the credentials needed for localized checkout.");
+    if (!stripe) throw new Error("Stripe.js could not be initialized.");
+    const instance = stripe.initCheckoutElementsSdk({
+      clientSecret: data.clientSecret,
+      adaptivePricing: { allowed: true },
+      elementsOptions: { appearance: getStripeAppearance(theme), loader: "always" },
+    });
+    const result = await instance.loadActions();
+    if (result.type === "error") throw new Error(result.error.message);
+    const price = getRecurringPrice(result.actions.getSession());
+    cacheAdaptivePrice(language, price);
+    return { instance, actions: result.actions, price };
+  })();
+  sharedSessions.set(language, { promise, createdAt: Date.now() });
+  promise.catch(() => {
+    if (sharedSessions.get(language)?.promise === promise) sharedSessions.delete(language);
+  });
+  return promise;
+}
+
+/** Warm the localized price in the background (e.g. when a free user opens the app). */
+export function prefetchVisionPrice(language: Language, theme: string) {
+  getSharedSession(language, theme).catch(() => {});
+}
+
 export function useAdaptiveCheckout(enabled = true) {
   const { toast } = useToast();
   const { language, t } = useLanguage();
@@ -102,49 +143,34 @@ export function useAdaptiveCheckout(enabled = true) {
   const [attempt, setAttempt] = useState(0);
   const hasOpenedCheckout = useRef(false);
 
+  const freshRef = useRef(false);
+
   useEffect(() => {
     if (!enabled) return;
 
     let cancelled = false;
-    let initializationTimedOut = false;
+    let timeoutId: number | undefined;
+    const fresh = freshRef.current;
+    freshRef.current = false;
+    const cached = readCachedAdaptivePrice(language);
     setLoading(true);
     setError(null);
-    setPrice(readCachedAdaptivePrice(language) ?? "…");
+    if (cached) setPrice(cached);
     setCheckout(null);
     setActions(null);
 
-    const initialize = async () => {
-      const [checkoutResponse, stripe] = await Promise.all([
-        subscriptionApi.checkoutEmbedded("VISION"),
-        getStripeClient(language),
-      ]);
-      const { data } = checkoutResponse;
-      if (!data.clientSecret) {
-        throw new Error("Stripe did not return the credentials needed for localized checkout.");
-      }
-      if (!stripe) throw new Error("Stripe.js could not be initialized.");
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutId = window.setTimeout(() => reject(new Error(translateRef.current("bill_checkout_load_error"))), 30000);
+    });
 
-      const instance = stripe.initCheckoutElementsSdk({
-        clientSecret: data.clientSecret,
-        adaptivePricing: { allowed: true },
-        elementsOptions: {
-          appearance: getStripeAppearance(themeRef.current),
-          loader: "always",
-        },
-      });
-      const result = await instance.loadActions();
-      if (result.type === "error") throw new Error(result.error.message);
-
-      const initialSession = result.actions.getSession();
-      const initialPrice = getRecurringPrice(initialSession);
-      if (cancelled || initializationTimedOut) return;
-
-      cacheAdaptivePrice(language, initialPrice);
-      setPrice(initialPrice);
-      setCheckout(instance);
-      setActions(result.actions);
-      instance.on("change", (session) => {
-        if (!cancelled) {
+    Promise.race([getSharedSession(language, themeRef.current, fresh), timeout])
+      .then(({ instance, actions: loaded, price: initialPrice }) => {
+        if (cancelled) return;
+        setPrice(initialPrice);
+        setCheckout(instance);
+        setActions(loaded);
+        instance.on("change", (session) => {
+          if (cancelled) return;
           try {
             const updatedPrice = getRecurringPrice(session);
             cacheAdaptivePrice(language, updatedPrice);
@@ -153,31 +179,20 @@ export function useAdaptiveCheckout(enabled = true) {
           } catch (cause) {
             setError(cause instanceof Error ? cause.message : "Stripe could not update the localized price.");
           }
-        }
-      });
-    };
-
-    let timeoutId: number | undefined;
-    const initializationTimeout = new Promise<never>((_, reject) => {
-      timeoutId = window.setTimeout(() => {
-        initializationTimedOut = true;
-        reject(new Error(translateRef.current("bill_checkout_load_error")));
-      }, 30000);
-    });
-    Promise.race([
-      initialize(),
-      initializationTimeout,
-    ])
+        });
+      })
       .catch((cause: unknown) => {
-        if (!cancelled) {
-          clearCachedAdaptivePrice(language);
-          setPrice("…");
-          const message = isAxiosError<{ message?: string }>(cause)
-            ? cause.response?.data?.message ?? cause.message
-            : cause instanceof Error
-              ? cause.message
-              : "Could not load localized Stripe pricing.";
-          setError(message);
+        if (cancelled) return;
+        // Keep the last known price visible instead of blanking it on a failed refresh.
+        if (!cached) setPrice("…");
+        const message = isAxiosError<{ message?: string }>(cause)
+          ? cause.response?.data?.message ?? cause.message
+          : cause instanceof Error
+            ? cause.message
+            : "Could not load localized Stripe pricing.";
+        setError(message);
+        // Only interrupt the user when they are actually trying to pay.
+        if (hasOpenedCheckout.current) {
           toast({ title: translateRef.current("bill_error"), description: message, variant: "destructive" });
         }
       })
@@ -193,18 +208,15 @@ export function useAdaptiveCheckout(enabled = true) {
   }, [attempt, enabled, language, toast]);
 
   const retry = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    setPrice(readCachedAdaptivePrice(language) ?? "…");
-    setCheckout(null);
-    setActions(null);
+    freshRef.current = true;
     setAttempt((current) => current + 1);
-  }, [language]);
+  }, []);
 
   const openCheckout = useCallback(() => {
     const hasExistingCheckout = hasOpenedCheckout.current;
     hasOpenedCheckout.current = true;
     setOpen(true);
+    // A session that already went through a payment attempt (or failed) must be replaced.
     if (error || hasExistingCheckout) retry();
   }, [error, retry]);
 

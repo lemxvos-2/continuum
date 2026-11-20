@@ -101,6 +101,7 @@
     "katex": "^0.16.4",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.462.0",
+    "marked": "^18.1.2",
     "next-themes": "^0.3.0",
     "pdfjs-dist": "4.10.38",
     "react": "^18.3.1",

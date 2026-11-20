@@ -52,6 +52,12 @@ describe("app theme preference", () => {
     expect(shouldApplyAppTheme("/notes/123", false)).toBe(true);
   });
 
+  it("applies the user's theme to Pricing and Markdown pages", () => {
+    for (const path of ["/pricing", "/about", "/privacy", "/terms", "/support", "/versions"]) {
+      expect(shouldApplyAppTheme(path, true), path).toBe(true);
+    }
+  });
+
   it("removes app theme classes when disabled", () => {
     applyAppTheme("LIGHT");
     applyAppTheme("LIGHT", false);

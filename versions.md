@@ -4,10 +4,39 @@ Every notable change to Continuum, from the first release to the latest version.
 
 ---
 
-v1.3.5 — XXX XX, 2026
+v1.4.1 — Nov XX, 2026
 
+- Workspaces: Switching workspaces now refreshes the app automatically (web, PWA and Android app).
+- Search: Notes are now found by mentioned entities (with or without @).
+- Editor: Copying text no longer adds piles of blank lines and keeps @mentions readable.
+- Android: Improved returning to the app after Google sign-in, with a manual "Open Continuum" button fallback.
+- Notes: Fixed opening a note changing its "last modified" date even without any edits.
+- Editor: Pasted Markdown text is now recognized and converted to formatted content automatically.
+- Insights: Added a daily Memories feed resurfacing noteworthy notes at 1, 3, and 6-month milestones and yearly anniversaries, with excerpt and photo preview.
+- Email: Added a daily memories email (max one per day) with an inline photo preview, excerpt, and a button to open the note.
+- Insights: Fixed signal category filters showing incorrect or duplicated results.
+- Notes: Calibrated the "worth revisiting" algorithm with an adaptive time window (7 days for new vaults, 21 days for mature ones), stricter relevance criteria, a 15% cap, and badge expiration.
+- Dates: Fixed dates displaying in American format regardless of the user's language; date fields and calendars now follow the app language.
+- Dates: Fixed dates shifting one day back in negative timezones.
+- Billing: Fixed the Vision price taking too long or failing to display; the localized price now loads in the background and is remembered between visits.
+- Billing: Fixed the price area for current Vision subscribers, showing the plan status instead of a loading spinner.
+- Workspaces: Fixed a generic error when hitting the workspace limit; the Free plan limit message is now shown correctly.
+- Workspaces: Fixed stale data from the previous workspace appearing after switching.
+- Workspaces: Redesigned the workspace picker popup with overlay and scrollable list.
+- Performance: The app now loads only essential data after login instead of hundreds of simultaneous requests.
+- Performance: Eliminated typing and scrolling stutters caused by excessive cache writes.
+- Performance: Heavy screens (3D graph, editor, insights) and the landing page now load only when opened.
+
+---
+
+v1.4.0 — Oct 31, 2026
+
+- Workspaces: Added workspace system to separate notes, entities, and projects into isolated environments (BETA).
+- Workspaces: Notes and entities can be assigned to one or multiple workspaces, with automatic inheritance during creation.
+- Workspaces: Added unified "All" view to browse all knowledge seamlessly across spaces.
+- Workspaces: Isolated 3D Knowledge Graph, global search, @mention autocomplete, backlinks, insights, and daily recall by active workspace.
+- Workspaces: Safe workspace deletion reassigns exclusive items back to Main with zero data loss.
 - UI: Enchance entity details screen, Enchance entity creation button.
-- Workspaces: Add workspaces (beta).
 
 ---
 

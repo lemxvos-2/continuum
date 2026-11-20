@@ -18,6 +18,7 @@ import type { QueryKey } from "@tanstack/react-query";
  * been restored. All jobs share one bounded worker pool.
  */
 export const PREFETCH_CONCURRENCY = 4;
+export const DETAIL_PREFETCH_LIMIT = 5;
 const ENTITY_LIST_PAGINATION_MARKER = ["entities", "list", "all-pages-v1"] as const;
 
 interface PrefetchJob {
@@ -156,10 +157,12 @@ function* createJobs(
     run: () => dashboardApi.summary().then((response) => response.data),
   };
 
-  for (const note of notes) {
+  // Details are only warmed for the few most recent items; everything else
+  // loads on demand, avoiding hundreds of requests right after sign-in.
+  for (const note of notes.slice(0, DETAIL_PREFETCH_LIMIT)) {
     if (note.id) yield* noteJobs(note.id);
   }
-  for (const entity of entities) {
+  for (const entity of entities.slice(0, DETAIL_PREFETCH_LIMIT)) {
     if (entity.id) yield* entityJobs(entity);
   }
 }

@@ -39,9 +39,20 @@ const APP_THEME_PATHS = [
   "/editor",
 ];
 
+const USER_THEME_PATHS = [
+  "/pricing",
+  "/about",
+  "/privacy",
+  "/terms",
+  "/support",
+  "/versions",
+];
+
 export function shouldApplyAppTheme(pathname: string, isAuthenticated: boolean) {
   if (pathname === "/" || pathname === "/index") return isAuthenticated;
-  return APP_THEME_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const matchesPath = (path: string) => pathname === path || pathname.startsWith(`${path}/`);
+  return APP_THEME_PATHS.some(matchesPath)
+    || (isAuthenticated && USER_THEME_PATHS.some(matchesPath));
 }
 
 export function applyAppTheme(theme: AppTheme, enabled = true) {

@@ -4,7 +4,8 @@ import { Capacitor } from "@capacitor/core";
 function isNativeState(state: string) {
   try {
     const part = state.split(".")[1];
-    const json = JSON.parse(atob(part.replace(/-/g, "+").replace(/_/g, "/")));
+    const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const json = JSON.parse(atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4)));
     return json?.platform === "native";
   } catch {
     return false;
@@ -54,8 +55,14 @@ export default function GoogleCallback() {
     if (code && state && !Capacitor.isNativePlatform() && isNativeState(state)) {
       if (hasCalled.current) return;
       hasCalled.current = true;
-      const deepLink = `continuum://google-callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
-      setAppLink(deepLink);
+      const query = `code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
+      // Chrome/Custom Tabs block automatic jumps to custom schemes (continuum://)
+      // but honour Android intent:// URLs, which target the app package directly.
+      const isAndroid = /android/i.test(navigator.userAgent);
+      const deepLink = isAndroid
+        ? `intent://google-callback?${query}#Intent;scheme=continuum;end`
+        : `continuum://google-callback?${query}`;
+      setAppLink(`continuum://google-callback?${query}`);
       window.location.href = deepLink;
       return;
     }
@@ -111,8 +118,11 @@ export default function GoogleCallback() {
         <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
         <p className="text-sm text-muted-foreground">{t("au_finishing_google_signin")}</p>
         {appLink && (
-          <a href={appLink} className="inline-block text-sm text-foreground underline">
-            Continuum
+          <a
+            href={appLink}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-medium text-primary-foreground"
+          >
+            Abrir Continuum / Open Continuum
           </a>
         )}
       </div>

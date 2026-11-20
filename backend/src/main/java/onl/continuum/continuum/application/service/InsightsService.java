@@ -366,7 +366,7 @@ public class InsightsService {
         double decay = Math.exp(-daysSinceLastInteraction / NOTE_DECAY_HALFLIFE_DAYS);
         double score = base * decay;
 
-        String badge = pickNoteBadge(score, daysSinceLastInteraction, recentMentions);
+        String badge = pickNoteBadge(score, daysSinceLastInteraction, recentMentions, entityConnections);
 
         return new NoteInsightDTO(
                 NoteSummaryDTO.from(note), round(score), badge,
@@ -453,8 +453,9 @@ public class InsightsService {
     // HELPERS
     // ─────────────────────────────────────────────────────────────
 
-    private String pickNoteBadge(double score, long daysSinceLast, long recentMentions) {
-        if (recentMentions >= 5 && daysSinceLast <= 4) return "Hot Right Now";
+    static String pickNoteBadge(double score, long daysSinceLast, long recentMentions, int entityConnections) {
+        // Notes rarely collect 5 backlinks; a fresh, well-linked note is also "hot".
+        if (daysSinceLast <= 4 && (recentMentions >= 2 || entityConnections >= 3)) return "Hot Right Now";
         if (score >= HIGH_RELEVANCE_THRESHOLD && daysSinceLast <= 14) return "High Relevance";
         return "Active";
     }

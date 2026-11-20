@@ -28,9 +28,19 @@ export function setActiveWorkspace(id: string | null) {
   } catch { /* ignore */ }
   listeners.forEach((l) => l());
   // Drop every cached response (memory + IndexedDB) so nothing from the
-  // previous workspace renders while the new one loads. Active queries
-  // refetch automatically with the new workspace header.
-  void resetAllCaches();
+  // previous workspace renders, then force a full reload so every screen
+  // refetches with the new workspace. A reload works identically on the web,
+  // the installed PWA and the Capacitor shell. The cache reset is awaited
+  // best-effort with a cap so a slow IndexedDB never blocks the reload.
+  if (typeof window === "undefined") {
+    void resetAllCaches();
+    return;
+  }
+  const reload = () => window.location.reload();
+  void Promise.race([
+    resetAllCaches(),
+    new Promise((resolve) => setTimeout(resolve, 800)),
+  ]).then(reload, reload);
 }
 
 export function useActiveWorkspace(): string | null {

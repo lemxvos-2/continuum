@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { formatLocalizedDate } from '@/lib/date-format';
 import { Clock, X, FileText } from "@/lib/heroicons";
 import {
   Dialog,
@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getDateFnsLocale } from '@/lib/date-format';
 
 interface DayData {
   date: Date;
@@ -56,7 +55,7 @@ export function DayDetailsModal({ dayData, isOpen, onClose }: DayDetailsModalPro
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock className="w-5 h-5" />
-            {format(dayData.date, 'EEEE, MMMM d, yyyy', { locale: getDateFnsLocale(language) })}
+            {formatLocalizedDate(dayData.date, language, { dateStyle: "full" })}
           </DialogTitle>
         </DialogHeader>
 

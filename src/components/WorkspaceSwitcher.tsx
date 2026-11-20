@@ -167,8 +167,9 @@ export function WorkspaceSwitcher({
       setActiveWorkspace(data.id);
       setCreating(false);
       setName("");
-    } catch {
-      toast.error(s.error);
+    } catch (err) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      toast.error(status === 402 || status === 403 || status === 409 || status === 429 ? s.freeWorkspaceLimit : s.error);
     } finally {
       setBusy(false);
     }

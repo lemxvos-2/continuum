@@ -30,7 +30,8 @@ import { qk, STALE } from "@/lib/queries";
 import { WorkspaceAssign } from "@/components/WorkspaceSwitcher";
 import { useWorkspaceText } from "@/lib/workspace-text";
 import { MAX_ENTITY_DESCRIPTION_LENGTH } from "@/lib/entity-description";
-import { formatLocalizedDate, getDateLocale } from "@/lib/date-format";
+import { formatLocalizedDate } from "@/lib/date-format";
+import { LocalizedDateInput } from "@/components/ui/localized-date-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
@@ -534,7 +535,7 @@ export default function EntityDetail() {
                   />
                   <div className="flex flex-col gap-2 border-t border-border/10 pt-4 sm:flex-row sm:items-center">
                     <span className="text-xs text-muted-foreground sm:mr-auto">{t("ent_log_other_date")}</span>
-                    <Input type="date" lang={getDateLocale(language)} value={trackDate} max={todayIso} onChange={(e) => setTrackDate(e.target.value)} className="h-9 w-full sm:w-auto" aria-label={t("tm_date")} />
+                    <LocalizedDateInput value={trackDate} max={todayIso} onChange={setTrackDate} className="h-9 w-full rounded-md border border-input bg-background sm:w-44" ariaLabel={t("tm_date")} />
                     <Button size="sm" variant="outline" className="h-9 rounded-xl" onClick={() => handleTrack(trackDate)} disabled={!trackDate || trackDate > todayIso || trackingDateBusy}>
                       {t("ent_save")}
                     </Button>

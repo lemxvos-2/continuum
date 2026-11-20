@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdaptiveCheckout } from "@/hooks/useAdaptiveCheckout";
 import { Loader2 } from "lucide-react";
 import { getVisitorPrice } from "@/lib/visitor-price";
+import { readCachedAdaptivePrice } from "@/lib/adaptive-price-cache";
 import { FREE_WORKSPACE_TOTAL_LIMIT } from "@/lib/workspace";
 
 type Row = { label: string; free: string | boolean; vision: string | boolean };
@@ -27,9 +28,10 @@ function Cell({ value, accent }: { value: string | boolean; accent?: boolean }) 
 
 export default function Pricing() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuth();
   const isVision = user?.plan === "VISION";
+  const cachedVisionPrice = isVision ? readCachedAdaptivePrice(language) : null;
   const adaptiveCheckout = useAdaptiveCheckout(Boolean(user && !isVision));
   const priceLoading = Boolean(
     user && !isVision && adaptiveCheckout.loading && adaptiveCheckout.price === "…",
@@ -37,11 +39,14 @@ export default function Pricing() {
   const visitorPrice = getVisitorPrice(
     typeof navigator === "undefined" ? [] : [navigator.language, ...navigator.languages],
   );
-  const visionPrice = user
-    ? adaptiveCheckout.price === "…"
-      ? t("bill_price_localized_in_checkout")
-      : adaptiveCheckout.price
-    : visitorPrice ?? t("bill_price_check_checkout");
+  const showVisionPricePeriod = !isVision || Boolean(cachedVisionPrice);
+  const visionPrice = isVision
+    ? cachedVisionPrice ?? "VISION ✓"
+    : user
+      ? adaptiveCheckout.price === "…"
+        ? t("bill_price_localized_in_checkout")
+        : adaptiveCheckout.price
+      : visitorPrice ?? t("bill_price_check_checkout");
 
   const rows: Row[] = [
     { label: t("bill_row_notes"), free: "50", vision: t("bill_unlimited") },
@@ -85,7 +90,9 @@ export default function Pricing() {
                   visionPrice
                 )}
               </p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{t("bill_per_month")}</p>
+              {showVisionPricePeriod && (
+                <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{t("bill_per_month")}</p>
+              )}
             </div>
           </div>
 

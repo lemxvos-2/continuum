@@ -31,7 +31,7 @@ import { Browser } from "@capacitor/browser";
 // Auth-critical screens stay eager (they gate the first paint); everything else
 // is code-split and streamed in behind a skeleton.
 import LoginSuccess from "./pages/LoginSuccess";
-import LandingPage from "./pages/LandingPage";
+const LandingPage = React.lazy(() => import("./pages/LandingPage"));
 
 const Login = React.lazy(() => import("./pages/Login"));
 const Register = React.lazy(() => import("./pages/Register"));
@@ -60,15 +60,14 @@ const Insights = React.lazy(() => import("./pages/Insights"));
 
 const queryPersister = createIdbPersister();
 
-/** Downloads every screen's code in the background so no route ever waits. */
+/**
+ * Warms only the light, frequently used screens. Heavy ones (graph/3D, editor,
+ * insights charts, vault/PDF) load on demand to keep startup smooth.
+ */
 const PAGE_LOADERS = [
-  () => import("./pages/Notes"), () => import("./pages/NoteEditor"), () => import("./pages/Entities"),
-  () => import("./pages/EntityDetail"), () => import("./pages/Activities"), () => import("./pages/Projects"),
-  () => import("./pages/Insights"), () => import("./pages/Vault"), () => import("./pages/KnowledgeGraph"),
-  () => import("./pages/Settings"), () => import("./pages/EditorSettings"), () => import("./pages/About"),
-  () => import("./pages/Pricing"), () => import("./pages/Support"), () => import("./pages/Terms"),
-  () => import("./pages/Privacy"), () => import("./pages/Versions"), () => import("./pages/VaultDownload"),
-  () => import("./pages/Login"), () => import("./pages/Register"), () => import("./pages/NotFound"),
+  () => import("./pages/Notes"), () => import("./pages/Entities"),
+  () => import("./pages/Activities"), () => import("./pages/Projects"),
+  () => import("./pages/Settings"),
 ];
 if (typeof window !== "undefined") {
   const warm = () => PAGE_LOADERS.reduce((p, load) => p.then(() => load().catch(() => {})), Promise.resolve() as Promise<unknown>);
