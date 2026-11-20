@@ -819,7 +819,13 @@
   .continuum-editor ul[data-type="taskList"] li[data-checked="true"] > div { @apply text-muted-foreground line-through decoration-1; }
 
   .continuum-editor code:not(pre code) { @apply bg-muted text-foreground rounded px-1.5 py-0.5 text-[0.85em] font-mono border border-border/50; }
-  .continuum-editor pre { @apply bg-card border border-border/10 rounded-md my-4 overflow-x-auto font-mono; padding: 1em; }
+  .continuum-editor pre {
+    @apply border border-border/10 rounded-md my-4 overflow-x-auto font-mono;
+    background-color: hsl(var(--card) / 0.68);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: 1em;
+  }
   .continuum-editor pre code { @apply bg-transparent p-0 border-0; }
   .continuum-editor hr { @apply my-6 border-t border-border/10; }
   .continuum-editor img { @apply rounded-md my-3; }
