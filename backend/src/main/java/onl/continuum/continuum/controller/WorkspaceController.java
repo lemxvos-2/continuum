@@ -37,7 +37,7 @@ public class WorkspaceController {
 
     public record WorkspaceRequest(String name, String color, String icon) {}
     public record AssignRequest(String kind, String id, List<String> workspaceIds) {}
-    public record BulkAssignRequest(String kind, List<String> ids, String workspaceId, String operation) {}
+    public record BulkAssignRequest(String kind, List<String> ids, List<String> workspaceIds, String operation) {}
 
     @GetMapping
     public List<Workspace> list(@AuthenticationPrincipal CustomUserDetails user) {
@@ -129,25 +129,19 @@ public class WorkspaceController {
         if (!"ADD".equals(operation) && !"MOVE".equals(operation)) {
             throw new BadRequestException("operation must be ADD or MOVE");
         }
-
-        String workspaceId = req.workspaceId();
-        boolean mainWorkspace = onl.continuum.continuum.infra.web.RequestWorkspace.MAIN.equals(workspaceId);
-        if (!mainWorkspace) {
-            if (workspaceId == null || workspaceId.isBlank()) throw new BadRequestException("workspaceId is required");
-            owned(user, workspaceId);
-        }
+        List<String> workspaceIds = distinctWorkspaceIds(req.workspaceIds(), user);
 
         if ("NOTE".equalsIgnoreCase(req.kind())) {
             List<Note> notes = noteRepo.findAllById(ids);
             requireOwnedItems(notes.size(), ids.size(), notes.stream().anyMatch(n -> !user.getUserId().equals(n.getUserId())));
-            notes.forEach(note -> note.setWorkspaceIds(updatedWorkspaceIds(note.getWorkspaceIds(), workspaceId, operation)));
+            notes.forEach(note -> note.setWorkspaceIds(updatedWorkspaceIds(note.getWorkspaceIds(), workspaceIds, operation)));
             noteRepo.saveAll(notes);
             return ResponseEntity.ok(Map.of("updatedCount", notes.size()));
         }
         if ("ENTITY".equalsIgnoreCase(req.kind())) {
             List<Entity> entities = entityRepo.findByIdInAndArchivedAtIsNull(ids);
             requireOwnedItems(entities.size(), ids.size(), entities.stream().anyMatch(e -> !user.getUserId().equals(e.getUserId())));
-            entities.forEach(entity -> entity.setWorkspaceIds(updatedWorkspaceIds(entity.getWorkspaceIds(), workspaceId, operation)));
+            entities.forEach(entity -> entity.setWorkspaceIds(updatedWorkspaceIds(entity.getWorkspaceIds(), workspaceIds, operation)));
             entityRepo.saveAll(entities);
             return ResponseEntity.ok(Map.of("updatedCount", entities.size()));
         }
@@ -161,20 +155,31 @@ public class WorkspaceController {
         return new ArrayList<>(new LinkedHashSet<>(ids));
     }
 
+    private List<String> distinctWorkspaceIds(List<String> workspaceIds, CustomUserDetails user) {
+        if (workspaceIds == null || workspaceIds.isEmpty()
+                || workspaceIds.stream().anyMatch(id -> id == null || id.isBlank())) {
+            throw new BadRequestException("workspaceIds is required");
+        }
+        List<String> ids = new ArrayList<>(new LinkedHashSet<>(workspaceIds));
+        Set<String> valid = new HashSet<>();
+        repo.findByUserIdOrderByCreatedAtAsc(user.getUserId()).forEach(workspace -> valid.add(workspace.getId()));
+        valid.add(onl.continuum.continuum.infra.web.RequestWorkspace.MAIN);
+        if (ids.stream().anyMatch(id -> !valid.contains(id))) throw new NotFoundException("Workspace not found");
+        return ids;
+    }
+
     private void requireOwnedItems(int found, int requested, boolean containsForeignItem) {
         if (found != requested || containsForeignItem) throw new NotFoundException("Item not found");
     }
 
-    private List<String> updatedWorkspaceIds(List<String> current, String workspaceId, String operation) {
-        if ("MOVE".equals(operation)) {
-            return onl.continuum.continuum.infra.web.RequestWorkspace.MAIN.equals(workspaceId)
-                    ? new ArrayList<>()
-                    : new ArrayList<>(List.of(workspaceId));
-        }
-        LinkedHashSet<String> next = new LinkedHashSet<>(current == null ? List.of() : current);
-        if (next.isEmpty()) next.add(onl.continuum.continuum.infra.web.RequestWorkspace.MAIN);
-        next.add(workspaceId);
-        if (next.size() == 1 && onl.continuum.continuum.infra.web.RequestWorkspace.MAIN.equals(workspaceId)) {
+    private List<String> updatedWorkspaceIds(List<String> current, List<String> selected, String operation) {
+        LinkedHashSet<String> next = "MOVE".equals(operation)
+                ? new LinkedHashSet<>()
+                : new LinkedHashSet<>(current == null || current.isEmpty()
+                        ? List.of(onl.continuum.continuum.infra.web.RequestWorkspace.MAIN)
+                        : current);
+        next.addAll(selected);
+        if (next.size() == 1 && next.contains(onl.continuum.continuum.infra.web.RequestWorkspace.MAIN)) {
             return new ArrayList<>();
         }
         return new ArrayList<>(next);

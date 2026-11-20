@@ -835,7 +835,12 @@
   .continuum-editor .tableWrapper { @apply my-4 overflow-x-auto; }
   .continuum-editor table { @apply w-full border-collapse; table-layout: fixed; font-size: inherit; }
   .continuum-editor th, .continuum-editor td { @apply border border-border/10 align-top; padding: 0.5em 0.75em; position: relative; min-width: 3em; }
-  .continuum-editor th { @apply bg-muted/50 font-medium text-left; }
+  .continuum-editor th {
+    @apply font-medium text-left;
+    background-color: hsl(var(--card) / 0.68);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
   .continuum-editor .selectedCell::after {
     content: ""; position: absolute; inset: 0; pointer-events: none;
     background: hsl(var(--foreground) / 0.08);

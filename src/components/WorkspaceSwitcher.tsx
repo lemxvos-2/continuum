@@ -399,7 +399,7 @@ export function WorkspaceBulkAssignButton({
   const s = useWorkspaceText();
   const { data: workspaces = [] } = useWorkspaces();
   const [open, setOpen] = useState(false);
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [workspaceIds, setWorkspaceIds] = useState<string[]>([]);
   const [operation, setOperation] = useState<"ADD" | "MOVE">("ADD");
   const [busy, setBusy] = useState(false);
   const destinations = [
@@ -411,16 +411,24 @@ export function WorkspaceBulkAssignButton({
     if (busy) return;
     setOpen(nextOpen);
     if (nextOpen) {
-      setWorkspaceId(null);
+      setWorkspaceIds([]);
       setOperation("ADD");
     }
   };
 
+  const toggleWorkspace = (workspaceId: string) => {
+    setWorkspaceIds((current) =>
+      current.includes(workspaceId)
+        ? current.filter((id) => id !== workspaceId)
+        : [...current, workspaceId],
+    );
+  };
+
   const apply = async () => {
-    if (!workspaceId || selectedIds.length === 0 || busy) return;
+    if (workspaceIds.length === 0 || selectedIds.length === 0 || busy) return;
     setBusy(true);
     try {
-      await workspacesApi.assignMany(kind, selectedIds, workspaceId, operation);
+      await workspacesApi.assignMany(kind, selectedIds, workspaceIds, operation);
     } catch {
       toast.error(s.error);
       setBusy(false);
@@ -478,13 +486,13 @@ export function WorkspaceBulkAssignButton({
           <p className="pb-2 pt-5 text-xs uppercase tracking-wide text-muted-foreground">{s.bulkChoose}</p>
           <div className="space-y-1">
             {destinations.map((workspace) => {
-              const selected = workspaceId === workspace.id;
+              const selected = workspaceIds.includes(workspace.id);
               return (
                 <button
                   key={workspace.id}
                   type="button"
                   aria-pressed={selected}
-                  onClick={() => setWorkspaceId(workspace.id)}
+                  onClick={() => toggleWorkspace(workspace.id)}
                   className={cn(
                     "flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm transition-colors",
                     selected ? "bg-foreground/10 text-foreground" : "text-foreground/80 hover:bg-secondary/60",
@@ -502,7 +510,7 @@ export function WorkspaceBulkAssignButton({
           <Button type="button" variant="ghost" disabled={busy} onClick={() => handleOpenChange(false)}>
             {s.cancel}
           </Button>
-          <Button type="button" disabled={busy || !workspaceId} onClick={() => void apply()}>
+          <Button type="button" disabled={busy || workspaceIds.length === 0} onClick={() => void apply()}>
             {operation === "ADD" ? s.bulkApplyAdd : s.bulkApplyMove}
           </Button>
         </DrawerFooter>

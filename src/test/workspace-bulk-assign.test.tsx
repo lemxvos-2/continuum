@@ -22,13 +22,13 @@ vi.mock("@/lib/workspace-text", () => ({
     bulkButton: "Workspace",
     bulkTitle: "Organize in a workspace",
     bulkDescription: (n: number) => `Choose for ${n} items.`,
-    bulkAdd: "Add to workspace",
+    bulkAdd: "Add to selected workspaces",
     bulkAddDescription: "Keep current assignments.",
-    bulkMove: "Move to workspace",
+    bulkMove: "Move to selected workspaces",
     bulkMoveDescription: "Replace current assignments.",
-    bulkChoose: "Choose a workspace",
-    bulkApplyAdd: "Add to workspace",
-    bulkApplyMove: "Move to workspace",
+    bulkChoose: "Choose one or more workspaces",
+    bulkApplyAdd: "Add to selected workspaces",
+    bulkApplyMove: "Move to selected workspaces",
     bulkSuccess: (n: number) => `Updated ${n} items.`,
   }),
 }));
@@ -77,40 +77,48 @@ function renderBulkAssign() {
 
 describe("bulk workspace assignment", () => {
   it("adds all selected items to the chosen workspace", async () => {
-    fixtures.list.mockResolvedValue({ data: [{ id: "workspace-1", name: "Research", color: "#123456" }] });
+    fixtures.list.mockResolvedValue({ data: [
+      { id: "workspace-1", name: "Research", color: "#123456" },
+      { id: "workspace-2", name: "Work", color: "#654321" },
+    ] });
     fixtures.assignMany.mockResolvedValue({ data: { updatedCount: 2 } });
     renderBulkAssign();
 
     fireEvent.click(screen.getByRole("button", { name: "Workspace" }));
     fireEvent.click(await screen.findByRole("button", { name: "Research" }));
-    fireEvent.click(screen.getByRole("button", { name: "Add to workspace" }));
+    fireEvent.click(screen.getByRole("button", { name: "Work" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to selected workspaces" }));
 
     await waitFor(() => {
       expect(fixtures.assignMany).toHaveBeenCalledWith(
         "ENTITY",
         ["entity-1", "entity-2"],
-        "workspace-1",
+        ["workspace-1", "workspace-2"],
         "ADD",
       );
     });
   });
 
   it("uses one drawer to move all selected items to the chosen workspace", async () => {
-    fixtures.list.mockResolvedValue({ data: [{ id: "workspace-1", name: "Research", color: "#123456" }] });
+    fixtures.list.mockResolvedValue({ data: [
+      { id: "workspace-1", name: "Research", color: "#123456" },
+      { id: "workspace-2", name: "Work", color: "#654321" },
+    ] });
     fixtures.assignMany.mockResolvedValue({ data: { updatedCount: 2 } });
     renderBulkAssign();
 
     fireEvent.click(screen.getByRole("button", { name: "Workspace" }));
     expect(await screen.findByRole("dialog")).toHaveTextContent("Choose for 2 items.");
-    fireEvent.click(screen.getByRole("button", { name: /Move to workspace/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Move to selected workspaces/ }));
     fireEvent.click(screen.getByRole("button", { name: "Research" }));
-    fireEvent.click(screen.getByRole("button", { name: "Move to workspace" }));
+    fireEvent.click(screen.getByRole("button", { name: "Work" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move to selected workspaces" }));
 
     await waitFor(() => {
       expect(fixtures.assignMany).toHaveBeenCalledWith(
         "ENTITY",
         ["entity-1", "entity-2"],
-        "workspace-1",
+        ["workspace-1", "workspace-2"],
         "MOVE",
       );
     });
