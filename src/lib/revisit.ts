@@ -1,0 +1,79 @@
+// Deterministic "note graveyard" helpers: open loops + daily shuffle. No AI.
+import { parseTiptapContent, type TiptapNode } from "@/lib/tiptap-content";
+
+const DAY = 86_400_000;
+export const SHUFFLE_INTERVALS = [7, 30, 90, 180];
+export const SNOOZE_DAYS = 14;
+const LOOP_PREFIX = /^(TODO|DÚVIDA|DUVIDA|IDEIA|DECIDIR|IDEA|DECIDE|QUESTION)\s*:/i;
+
+export interface OpenLoop { key: string; noteId: string; text: string; kind: "task" | "question" | "prefix"; }
+
+function text(node: TiptapNode): string {
+  if (node.type === "text") return node.text ?? "";
+  if (node.type === "mention") return `@${String(node.attrs?.label ?? "")}`;
+  return (node.content ?? []).map(text).join("");
+}
+
+export function extractOpenLoops(noteId: string, content: unknown): OpenLoop[] {
+  const out: OpenLoop[] = [];
+  const walk = (node: TiptapNode) => {
+    if (node.type === "taskItem") {
+      if (!node.attrs?.checked) {
+        const t = text(node).trim();
+        if (t) out.push({ key: `${noteId}:${t}`, noteId, text: t, kind: "task" });
+      }
+      return;
+    }
+    if (node.type === "paragraph" || node.type === "heading") {
+      const t = text(node).trim();
+      if (LOOP_PREFIX.test(t)) out.push({ key: `${noteId}:${t}`, noteId, text: t, kind: "prefix" });
+      else if (t.length > 8 && t.endsWith("?")) out.push({ key: `${noteId}:${t}`, noteId, text: t, kind: "question" });
+      return;
+    }
+    (node.content ?? []).forEach(walk);
+  };
+  walk(parseTiptapContent(content));
+  return out;
+}
+
+export interface ShuffleState { stage: Record<string, number>; next: Record<string, number>; archived: string[]; }
+export interface LoopState { snoozed: Record<string, number>; dismissed: string[]; }
+
+function hash(s: string) { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; }
+
+export function dayKey(now: number) { return new Date(now).toISOString().slice(0, 10); }
+
+/** Eligible = older than first interval, not archived, due. Same pick all day (seed = date + user + skip). */
+export function pickShuffle<T extends { id: string; updatedAt: string; entityIds?: string[] }>(
+  notes: T[], state: ShuffleState, seed: string, skip: number, now: number,
+): T | null {
+  const pool = notes.filter((n) => {
+    if (state.archived.includes(n.id)) return false;
+    if (now - new Date(n.updatedAt).getTime() < SHUFFLE_INTERVALS[0] * DAY) return false;
+    return (state.next[n.id] ?? 0) <= now;
+  }).sort((a, b) => a.id.localeCompare(b.id));
+  if (!pool.length) return null;
+  const weights = pool.map((n) => 1 + (n.entityIds?.length ?? 0));
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = hash(`${seed}:${dayKey(now)}:${skip}`) % total;
+  for (let i = 0; i < pool.length; i++) { r -= weights[i]; if (r < 0) return pool[i]; }
+  return pool[0];
+}
+
+export function markRelevant(state: ShuffleState, id: string, now: number): ShuffleState {
+  const stage = Math.min((state.stage[id] ?? 0) + 1, SHUFFLE_INTERVALS.length - 1);
+  return { ...state, stage: { ...state.stage, [id]: stage }, next: { ...state.next, [id]: now + SHUFFLE_INTERVALS[stage] * DAY } };
+}
+
+export function visibleLoops(loops: OpenLoop[], state: LoopState, now: number, limit = 3) {
+  return loops.filter((l) => !state.dismissed.includes(l.key) && (state.snoozed[l.key] ?? 0) <= now).slice(0, limit);
+}
+
+export function snooze(state: LoopState, key: string, now: number): LoopState {
+  return { ...state, snoozed: { ...state.snoozed, [key]: now + SNOOZE_DAYS * DAY } };
+}
+
+export function appendThought(content: unknown, thought: string, date: string): TiptapNode {
+  const doc = parseTiptapContent(content);
+  return { ...doc, content: [...(doc.content ?? []), { type: "paragraph", content: [{ type: "text", text: `${date} — ${thought}` }] }] };
+}

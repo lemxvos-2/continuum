@@ -48,6 +48,7 @@ import { FloatingCreateButton } from "@/components/ui/floating-create-button";
 import { ListSortMenu, type ListSortMode } from "@/components/ui/list-sort-menu";
 import { formatLocalizedDate, formatLocalizedRelativeDate } from "@/lib/date-format";
 import { WorkspaceBulkAssignButton } from "@/components/WorkspaceSwitcher";
+import { RevisitCard } from "@/components/revisit/RevisitCard";
 
 
 import SmoothDrawer from "@/components/ui/smooth-drawer";
@@ -791,6 +792,8 @@ export default function Notes() {
               </div>
               {limitMsg && <p className="mt-3 text-xs text-muted-foreground">{limitMsg}</p>}
             </header>
+
+            {!selectMode && !search.trim() && <RevisitCard notes={notes} />}
 
             {/* Mobile: search + view chips */}
             <div className={selectMode ? "hidden lg:mb-5 lg:block lg:space-y-3" : "mb-5 space-y-3"}>
