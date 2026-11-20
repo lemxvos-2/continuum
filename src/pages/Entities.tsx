@@ -33,6 +33,7 @@ import { FloatingCreateButton } from "@/components/ui/floating-create-button";
 import { ListSortMenu, type ListSortMode } from "@/components/ui/list-sort-menu";
 import { InsightSignalBadge } from "@/components/InsightSignal";
 import { formatLocalizedRelativeDate } from "@/lib/date-format";
+import { WorkspaceBulkAssignButton } from "@/components/WorkspaceSwitcher";
 
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -352,6 +353,15 @@ export default function Entities() {
                   >
                     {filteredAndSorted.length > 0 && filteredAndSorted.every((e) => selectedIds.has(e.id)) ? t("select_clearAll") : t("select_all")}
                   </Button>
+                  <WorkspaceBulkAssignButton
+                    kind="ENTITY"
+                    selectedIds={[...selectedIds]}
+                    onApplied={() => {
+                      exitSelectMode();
+                      void queryClient.invalidateQueries({ queryKey: ["entities"] });
+                      void queryClient.invalidateQueries({ queryKey: ["graph"] });
+                    }}
+                  />
                   <Button
                     type="button"
                     variant="destructive"

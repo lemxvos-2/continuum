@@ -23,6 +23,8 @@ v1.4.1 — Nov XX, 2026
 - Workspaces: Fixed a generic error when hitting the workspace limit; the Free plan limit message is now shown correctly.
 - Workspaces: Fixed stale data from the previous workspace appearing after switching.
 - Workspaces: Redesigned the workspace picker popup with overlay and scrollable list.
+- Workspaces: Added rename and delete actions to the workspace picker on desktop and mobile.
+- Workspaces: Added bulk actions to add selected notes and entities to a workspace or move them there.
 - Performance: The app now loads only essential data after login instead of hundreds of simultaneous requests.
 - Performance: Eliminated typing and scrolling stutters caused by excessive cache writes.
 - Performance: Heavy screens (3D graph, editor, insights) and the landing page now load only when opened.

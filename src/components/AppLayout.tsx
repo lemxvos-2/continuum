@@ -69,7 +69,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <VaultPicker />
       {/* Desktop hover-expand sidebar */}
       <SessionNavBar />
-      {/* Hosts the create-workspace dialog opened from the mobile More menu. */}
+      {/* Hosts workspace dialogs opened from the mobile More menu. */}
       <div className="hidden"><WorkspaceSwitcher listenForCreate /></div>
 
       <main className="min-w-0 flex-1 overflow-visible bg-background lg:ml-[3.25rem] lg:overflow-auto">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArchiveBox, Check, ChevronRight, Plus, Trash2 } from "@/lib/heroicons";
+import { ArchiveBox, Check, ChevronRight, Edit, Plus, Trash2 } from "@/lib/heroicons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +26,8 @@ import {
   Drawer,
   DrawerContent,
   DrawerHeader,
+  DrawerDescription,
+  DrawerFooter,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
@@ -57,6 +59,10 @@ export function openCreateWorkspace() {
   window.dispatchEvent(new Event("continuum:create-workspace"));
 }
 
+function requestWorkspaceAction(action: "rename" | "delete", workspace: Workspace) {
+  window.dispatchEvent(new CustomEvent(`continuum:${action}-workspace`, { detail: workspace }));
+}
+
 /** Workspace picker inside the mobile More menu: tapping the header opens a panel
  *  that overlays the whole menu, with its own scrollable list. */
 export function WorkspaceSubmenu({ expanded = false, onExpandedChange }: { expanded?: boolean; onExpandedChange?: (v: boolean) => void }) {
@@ -64,9 +70,9 @@ export function WorkspaceSubmenu({ expanded = false, onExpandedChange }: { expan
   const active = useActiveWorkspace();
   const { data: workspaces = [] } = useWorkspaces();
   const items = [
-    { id: null as string | null, name: s.all, color: undefined as string | undefined },
-    { id: MAIN_WORKSPACE, name: s.main, color: "hsl(var(--muted-foreground))" },
-    ...workspaces.map((w) => ({ id: w.id as string | null, name: w.name, color: w.color })),
+    { id: null as string | null, name: s.all, color: undefined as string | undefined, workspace: undefined },
+    { id: MAIN_WORKSPACE, name: s.main, color: "hsl(var(--muted-foreground))", workspace: undefined },
+    ...workspaces.map((w) => ({ id: w.id as string | null, name: w.name, color: w.color, workspace: w })),
   ];
   const cur = items.find((i) => i.id === active) ?? items[0];
   return (
@@ -96,6 +102,34 @@ export function WorkspaceSubmenu({ expanded = false, onExpandedChange }: { expan
                 {i.color ? <Dot color={i.color} className="mx-[3px]" /> : <ArchiveBox className="h-4 w-4 text-muted-foreground" />}
                 <span className="flex-1 truncate">{i.name}</span>
                 {active === i.id && <Check className="h-4 w-4" />}
+                {i.workspace && (
+                  <span className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label={`${s.rename}: ${i.name}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (i.workspace) requestWorkspaceAction("rename", i.workspace);
+                      }}
+                      className="rounded p-1 text-muted-foreground hover:text-foreground"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`${s.delete}: ${i.name}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (i.workspace) requestWorkspaceAction("delete", i.workspace);
+                      }}
+                      className="rounded p-1 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </span>
+                )}
               </DropdownMenuItem>
             ))}
           </div>
@@ -132,8 +166,10 @@ export function WorkspaceSwitcher({
   const [internalOpen, setInternalOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
+  const [renameName, setRenameName] = useState("");
   const [color, setColor] = useState(WORKSPACE_COLORS[0]);
   const [busy, setBusy] = useState(false);
+  const [pendingRename, setPendingRename] = useState<Workspace | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Workspace | null>(null);
   const menuOpen = open ?? internalOpen;
   const handleOpenChange = (nextOpen: boolean) => {
@@ -142,9 +178,21 @@ export function WorkspaceSwitcher({
   };
   useEffect(() => {
     if (!listenForCreate) return;
-    const open = () => setCreating(true);
-    window.addEventListener("continuum:create-workspace", open);
-    return () => window.removeEventListener("continuum:create-workspace", open);
+    const openCreate = () => setCreating(true);
+    const openRename = (event: Event) => {
+      const workspace = (event as CustomEvent<Workspace>).detail;
+      setRenameName(workspace.name);
+      setPendingRename(workspace);
+    };
+    const openDelete = (event: Event) => setPendingDelete((event as CustomEvent<Workspace>).detail);
+    window.addEventListener("continuum:create-workspace", openCreate);
+    window.addEventListener("continuum:rename-workspace", openRename);
+    window.addEventListener("continuum:delete-workspace", openDelete);
+    return () => {
+      window.removeEventListener("continuum:create-workspace", openCreate);
+      window.removeEventListener("continuum:rename-workspace", openRename);
+      window.removeEventListener("continuum:delete-workspace", openDelete);
+    };
   }, [listenForCreate]);
   const current = active === MAIN_WORKSPACE ? { id: MAIN_WORKSPACE, name: s.main, color: "hsl(var(--muted-foreground))" } as Workspace : workspaces.find((w) => w.id === active);
 
@@ -189,6 +237,24 @@ export function WorkspaceSwitcher({
     }
   };
 
+  const rename = async () => {
+    const w = pendingRename;
+    const trimmed = renameName.trim();
+    if (!w || !trimmed) return;
+    setBusy(true);
+    try {
+      const { data } = await workspacesApi.update(w.id, { name: trimmed });
+      qc.setQueryData<Workspace[]>(WORKSPACES_KEY, (prev) =>
+        (prev ?? []).map((workspace) => workspace.id === w.id ? data : workspace),
+      );
+      setPendingRename(null);
+    } catch {
+      toast.error(s.error);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <>
       <DropdownMenu modal={false} open={menuOpen} onOpenChange={handleOpenChange}>
@@ -228,7 +294,15 @@ export function WorkspaceSwitcher({
               {active === w.id && <Check className="h-4 w-4" />}
               <button
                 type="button"
-                aria-label={s.delete}
+                aria-label={`${s.rename}: ${w.name}`}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleOpenChange(false); setRenameName(w.name); setPendingRename(w); }}
+                className="rounded p-0.5 text-muted-foreground opacity-60 hover:text-foreground group-hover:opacity-100"
+              >
+                <Edit className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                aria-label={`${s.delete}: ${w.name}`}
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleOpenChange(false); setPendingDelete(w); }}
                 className="rounded p-0.5 text-muted-foreground opacity-60 hover:text-destructive group-hover:opacity-100"
               >
@@ -275,6 +349,26 @@ export function WorkspaceSwitcher({
         </DialogContent>
       </Dialog>
 
+      <Dialog open={pendingRename !== null} onOpenChange={(o) => { if (!o) setPendingRename(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{s.rename}</DialogTitle>
+          </DialogHeader>
+          <Input
+            autoFocus
+            value={renameName}
+            maxLength={60}
+            placeholder={s.placeholder}
+            onChange={(e) => setRenameName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void rename(); }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingRename(null)}>{s.cancel}</Button>
+            <Button onClick={() => void rename()} disabled={busy || !renameName.trim()}>{s.save}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ConfirmDialog
         open={pendingDelete !== null}
         onOpenChange={(o) => { if (!o) setPendingDelete(null); }}
@@ -290,6 +384,130 @@ export function WorkspaceSwitcher({
         }}
       />
     </>
+  );
+}
+
+export function WorkspaceBulkAssignButton({
+  kind,
+  selectedIds,
+  onApplied,
+}: {
+  kind: "NOTE" | "ENTITY";
+  selectedIds: string[];
+  onApplied: () => void;
+}) {
+  const s = useWorkspaceText();
+  const { data: workspaces = [] } = useWorkspaces();
+  const [open, setOpen] = useState(false);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [operation, setOperation] = useState<"ADD" | "MOVE">("ADD");
+  const [busy, setBusy] = useState(false);
+  const destinations = [
+    { id: MAIN_WORKSPACE, name: s.main, color: "hsl(var(--muted-foreground))" },
+    ...workspaces,
+  ];
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (busy) return;
+    setOpen(nextOpen);
+    if (nextOpen) {
+      setWorkspaceId(null);
+      setOperation("ADD");
+    }
+  };
+
+  const apply = async () => {
+    if (!workspaceId || selectedIds.length === 0 || busy) return;
+    setBusy(true);
+    try {
+      await workspacesApi.assignMany(kind, selectedIds, workspaceId, operation);
+    } catch {
+      toast.error(s.error);
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    setOpen(false);
+    toast.success(s.bulkSuccess(selectedIds.length));
+    onApplied();
+  };
+
+  return (
+    <Drawer open={open} onOpenChange={handleOpenChange}>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        aria-label={s.bulkButton}
+        className="w-full justify-center normal-case gap-1.5 px-3 py-1.5 text-xs lg:w-auto"
+        disabled={selectedIds.length === 0}
+        onClick={() => handleOpenChange(true)}
+      >
+        <ArchiveBox className="h-3.5 w-3.5" />
+        {s.bulkButton}
+      </Button>
+      <DrawerContent className="max-h-[85vh] gap-0">
+        <DrawerHeader className="text-left">
+          <DrawerTitle className="font-serif">{s.bulkTitle}</DrawerTitle>
+          <DrawerDescription>{s.bulkDescription(selectedIds.length)}</DrawerDescription>
+        </DrawerHeader>
+        <div className="min-h-0 overflow-y-auto px-4">
+          <div className="grid grid-cols-2 gap-2">
+            {(["ADD", "MOVE"] as const).map((value) => {
+              const isAdd = value === "ADD";
+              const selected = operation === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setOperation(value)}
+                  className={cn(
+                    "flex min-h-20 flex-col items-start justify-center gap-1 rounded-xl border px-3 py-2 text-left transition-colors",
+                    selected ? "border-foreground/30 bg-foreground/5 text-foreground" : "border-border/10 text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <span className="text-sm font-medium">{isAdd ? s.bulkAdd : s.bulkMove}</span>
+                  <span className="text-xs leading-relaxed text-muted-foreground">
+                    {isAdd ? s.bulkAddDescription : s.bulkMoveDescription}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="pb-2 pt-5 text-xs uppercase tracking-wide text-muted-foreground">{s.bulkChoose}</p>
+          <div className="space-y-1">
+            {destinations.map((workspace) => {
+              const selected = workspaceId === workspace.id;
+              return (
+                <button
+                  key={workspace.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setWorkspaceId(workspace.id)}
+                  className={cn(
+                    "flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm transition-colors",
+                    selected ? "bg-foreground/10 text-foreground" : "text-foreground/80 hover:bg-secondary/60",
+                  )}
+                >
+                  <Dot color={workspace.color} />
+                  <span className="min-w-0 flex-1 truncate">{workspace.name}</span>
+                  {selected && <Check className="h-4 w-4" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <DrawerFooter className="flex-row justify-end border-t border-border/10">
+          <Button type="button" variant="ghost" disabled={busy} onClick={() => handleOpenChange(false)}>
+            {s.cancel}
+          </Button>
+          <Button type="button" disabled={busy || !workspaceId} onClick={() => void apply()}>
+            {operation === "ADD" ? s.bulkApplyAdd : s.bulkApplyMove}
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }
 

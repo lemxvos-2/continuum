@@ -47,6 +47,7 @@ import { StickyNote } from "@/lib/heroicons";
 import { FloatingCreateButton } from "@/components/ui/floating-create-button";
 import { ListSortMenu, type ListSortMode } from "@/components/ui/list-sort-menu";
 import { formatLocalizedDate, formatLocalizedRelativeDate } from "@/lib/date-format";
+import { WorkspaceBulkAssignButton } from "@/components/WorkspaceSwitcher";
 
 
 import SmoothDrawer from "@/components/ui/smooth-drawer";
@@ -895,6 +896,15 @@ export default function Notes() {
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  <WorkspaceBulkAssignButton
+                    kind="NOTE"
+                    selectedIds={[...selectedIds]}
+                    onApplied={() => {
+                      exitSelectMode();
+                      void queryClient.invalidateQueries({ queryKey: ["notes"] });
+                      void queryClient.invalidateQueries({ queryKey: ["graph"] });
+                    }}
+                  />
                   <Button
                     type="button"
                     variant="destructive"

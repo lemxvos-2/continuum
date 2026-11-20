@@ -37,6 +37,7 @@ public class WorkspaceController {
 
     public record WorkspaceRequest(String name, String color, String icon) {}
     public record AssignRequest(String kind, String id, List<String> workspaceIds) {}
+    public record BulkAssignRequest(String kind, List<String> ids, String workspaceId, String operation) {}
 
     @GetMapping
     public List<Workspace> list(@AuthenticationPrincipal CustomUserDetails user) {
@@ -117,6 +118,66 @@ public class WorkspaceController {
             throw new BadRequestException("kind must be NOTE or ENTITY");
         }
         return ResponseEntity.ok(Map.of("id", req.id(), "workspaceIds", ids));
+    }
+
+    @PutMapping("/assign/bulk")
+    public ResponseEntity<Map<String, Integer>> assignBulk(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody BulkAssignRequest req) {
+        List<String> ids = distinctIds(req.ids());
+        String operation = req.operation() == null ? "" : req.operation().toUpperCase(Locale.ROOT);
+        if (!"ADD".equals(operation) && !"MOVE".equals(operation)) {
+            throw new BadRequestException("operation must be ADD or MOVE");
+        }
+
+        String workspaceId = req.workspaceId();
+        boolean mainWorkspace = onl.continuum.continuum.infra.web.RequestWorkspace.MAIN.equals(workspaceId);
+        if (!mainWorkspace) {
+            if (workspaceId == null || workspaceId.isBlank()) throw new BadRequestException("workspaceId is required");
+            owned(user, workspaceId);
+        }
+
+        if ("NOTE".equalsIgnoreCase(req.kind())) {
+            List<Note> notes = noteRepo.findAllById(ids);
+            requireOwnedItems(notes.size(), ids.size(), notes.stream().anyMatch(n -> !user.getUserId().equals(n.getUserId())));
+            notes.forEach(note -> note.setWorkspaceIds(updatedWorkspaceIds(note.getWorkspaceIds(), workspaceId, operation)));
+            noteRepo.saveAll(notes);
+            return ResponseEntity.ok(Map.of("updatedCount", notes.size()));
+        }
+        if ("ENTITY".equalsIgnoreCase(req.kind())) {
+            List<Entity> entities = entityRepo.findByIdInAndArchivedAtIsNull(ids);
+            requireOwnedItems(entities.size(), ids.size(), entities.stream().anyMatch(e -> !user.getUserId().equals(e.getUserId())));
+            entities.forEach(entity -> entity.setWorkspaceIds(updatedWorkspaceIds(entity.getWorkspaceIds(), workspaceId, operation)));
+            entityRepo.saveAll(entities);
+            return ResponseEntity.ok(Map.of("updatedCount", entities.size()));
+        }
+        throw new BadRequestException("kind must be NOTE or ENTITY");
+    }
+
+    private List<String> distinctIds(List<String> ids) {
+        if (ids == null || ids.isEmpty() || ids.stream().anyMatch(id -> id == null || id.isBlank())) {
+            throw new BadRequestException("ids is required");
+        }
+        return new ArrayList<>(new LinkedHashSet<>(ids));
+    }
+
+    private void requireOwnedItems(int found, int requested, boolean containsForeignItem) {
+        if (found != requested || containsForeignItem) throw new NotFoundException("Item not found");
+    }
+
+    private List<String> updatedWorkspaceIds(List<String> current, String workspaceId, String operation) {
+        if ("MOVE".equals(operation)) {
+            return onl.continuum.continuum.infra.web.RequestWorkspace.MAIN.equals(workspaceId)
+                    ? new ArrayList<>()
+                    : new ArrayList<>(List.of(workspaceId));
+        }
+        LinkedHashSet<String> next = new LinkedHashSet<>(current == null ? List.of() : current);
+        if (next.isEmpty()) next.add(onl.continuum.continuum.infra.web.RequestWorkspace.MAIN);
+        next.add(workspaceId);
+        if (next.size() == 1 && onl.continuum.continuum.infra.web.RequestWorkspace.MAIN.equals(workspaceId)) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(next);
     }
 
     private Workspace owned(CustomUserDetails user, String id) {

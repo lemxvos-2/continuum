@@ -696,4 +696,6 @@ export const workspacesApi = {
   delete: (id: string) => api.delete(`/api/workspaces/${id}`),
   assign: (kind: "NOTE" | "ENTITY", id: string, workspaceIds: string[]) =>
     api.put("/api/workspaces/assign", { kind, id, workspaceIds }),
+  assignMany: (kind: "NOTE" | "ENTITY", ids: string[], workspaceId: string, operation: "ADD" | "MOVE") =>
+    api.put<{ updatedCount: number }>("/api/workspaces/assign/bulk", { kind, ids, workspaceId, operation }),
 };
