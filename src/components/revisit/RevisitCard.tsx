@@ -9,17 +9,17 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { getActiveWorkspace } from "@/lib/workspace";
 import { noteSearchText } from "@/lib/note-search";
 import {
-  appendThought, dayKey, extractOpenLoops, markRelevant, pickShuffle, snooze, visibleLoops,
+  appendThought, dayKey, dueCapsules, extractCapsules, type Capsule, extractOpenLoops, markRelevant, pickShuffle, snooze, visibleLoops,
   type LoopState, type OpenLoop, type ShuffleState,
 } from "@/lib/revisit";
 
 interface NoteLite { id: string; title: string; updatedAt: string; entityIds?: string[] }
 
 const L = {
-  pt: { shuffle: "1 minuto por dia", relevant: "Ainda relevante", thought: "Adicionar pensamento", archive: "Desapegar", skip: "Pular", save: "Salvar", loops: "pensamentos incompletos", resolve: "Resolver", snooze: "Adiar", dismiss: "Descartar", ph: "Seu pensamento de hoje…" },
-  en: { shuffle: "1 minute a day", relevant: "Still relevant", thought: "Add thought", archive: "Let go", skip: "Skip", save: "Save", loops: "unfinished thoughts", resolve: "Resolve", snooze: "Snooze", dismiss: "Dismiss", ph: "Today's thought…" },
-  es: { shuffle: "1 minuto al día", relevant: "Aún relevante", thought: "Añadir idea", archive: "Soltar", skip: "Saltar", save: "Guardar", loops: "pensamientos incompletos", resolve: "Resolver", snooze: "Posponer", dismiss: "Descartar", ph: "Tu idea de hoy…" },
-  fr: { shuffle: "1 minute par jour", relevant: "Toujours pertinent", thought: "Ajouter une pensée", archive: "Lâcher prise", skip: "Passer", save: "Enregistrer", loops: "pensées inachevées", resolve: "Résoudre", snooze: "Reporter", dismiss: "Ignorer", ph: "Votre pensée du jour…" },
+  pt: { capsule: "Mensagem do seu eu do passado", open: "Abrir", reply: "Responder hoje", shuffle: "1 minuto por dia", relevant: "Ainda relevante", thought: "Adicionar pensamento", archive: "Desapegar", skip: "Pular", save: "Salvar", loops: "pensamentos incompletos", resolve: "Resolver", snooze: "Adiar", dismiss: "Descartar", ph: "Seu pensamento de hoje…" },
+  en: { capsule: "A message from your past self", open: "Open", reply: "Reply today", shuffle: "1 minute a day", relevant: "Still relevant", thought: "Add thought", archive: "Let go", skip: "Skip", save: "Save", loops: "unfinished thoughts", resolve: "Resolve", snooze: "Snooze", dismiss: "Dismiss", ph: "Today's thought…" },
+  es: { capsule: "Mensaje de tu yo del pasado", open: "Abrir", reply: "Responder hoy", shuffle: "1 minuto al día", relevant: "Aún relevante", thought: "Añadir idea", archive: "Soltar", skip: "Saltar", save: "Guardar", loops: "pensamientos incompletos", resolve: "Resolver", snooze: "Posponer", dismiss: "Descartar", ph: "Tu idea de hoy…" },
+  fr: { capsule: "Message de votre moi passé", open: "Ouvrir", reply: "Répondre aujourd'hui", shuffle: "1 minute par jour", relevant: "Toujours pertinent", thought: "Ajouter une pensée", archive: "Lâcher prise", skip: "Passer", save: "Enregistrer", loops: "pensées inachevées", resolve: "Résoudre", snooze: "Reporter", dismiss: "Ignorer", ph: "Votre pensée du jour…" },
 };
 
 const load = <T,>(k: string, d: T): T => { try { return JSON.parse(localStorage.getItem(k) || "") as T; } catch { return d; } };
@@ -48,6 +48,8 @@ export function RevisitCard({ notes }: { notes: NoteLite[] }) {
   const [preview, setPreview] = useState("");
   const [thought, setThought] = useState<string | null>(null);
   const [loops, setLoops] = useState<OpenLoop[]>([]);
+  const [caps, setCaps] = useState<Capsule[]>([]);
+  const [reply, setReply] = useState<{ key: string; text: string } | null>(null);
 
   const pick = useMemo(() => pickShuffle(notes, shuffle, String(ws), skip, now), [notes, shuffle, ws, skip]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -64,6 +66,9 @@ export function RevisitCard({ notes }: { notes: NoteLite[] }) {
       .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt)).slice(0, 15);
     Promise.all(old.map((n) => detail(n.id).then((d) => extractOpenLoops(n.id, d.content)).catch(() => [])))
       .then((all) => { if (!cancelled) setLoops(all.flat()); });
+    const recent = [...notes].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 40);
+    Promise.all(recent.map((n) => detail(n.id).then((d) => extractCapsules(n.id, d.content)).catch(() => [])))
+      .then((all) => { if (!cancelled) setCaps(all.flat()); });
     return () => { cancelled = true; };
   }, [notes.length, ws]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -82,10 +87,39 @@ export function RevisitCard({ notes }: { notes: NoteLite[] }) {
     updShuffle(markRelevant(shuffle, pick.id, now));
   };
 
-  if (!pick && !shown.length) return null;
+  const dueCaps = dueCapsules(caps, loopState.dismissed, now).slice(0, 2);
+  const sendReply = async (c: Capsule) => {
+    if (!reply?.text.trim()) return;
+    const d = await detail(c.noteId);
+    const content = appendThought(d.content, reply.text.trim(), new Date().toLocaleDateString());
+    await notesApi.update(c.noteId, { content });
+    queryClient.setQueryData(qk.note(c.noteId), { ...d, content });
+    setReply(null);
+    updLoops({ ...loopState, dismissed: [...loopState.dismissed, c.key] });
+  };
+
+  if (!pick && !shown.length && !dueCaps.length) return null;
 
   return (
     <section className="mb-6 space-y-3">
+      {dueCaps.map((c) => (
+        <div key={c.key} className="rounded-xl border border-primary/30 bg-card/50 p-4">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">📬 {t.capsule} · {title(c.noteId)}</p>
+          <p className="mt-2 font-serif text-lg text-foreground">“{c.text}”</p>
+          {reply?.key === c.key ? (
+            <div className="mt-3 flex gap-2">
+              <Input autoFocus value={reply.text} placeholder={t.ph} onChange={(e) => setReply({ key: c.key, text: e.target.value })} onKeyDown={(e) => e.key === "Enter" && sendReply(c)} />
+              <Button size="sm" onClick={() => sendReply(c)}>{t.save}</Button>
+            </div>
+          ) : (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" onClick={() => navigate(`/notes/${c.noteId}`)}>{t.open}</Button>
+              <Button size="sm" variant="secondary" onClick={() => setReply({ key: c.key, text: "" })}>✏️ {t.reply}</Button>
+              <Button size="sm" variant="ghost" onClick={() => updLoops({ ...loopState, dismissed: [...loopState.dismissed, c.key] })}>{t.dismiss}</Button>
+            </div>
+          )}
+        </div>
+      ))}
       {pick && (
         <div className="rounded-xl border border-border/20 bg-card/50 p-4">
           <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{t.shuffle}</p>

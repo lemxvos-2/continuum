@@ -52,6 +52,7 @@ export const dict: Module = {
     ed_untitled_entity: "Untitled Entity",
     ed_mention_hint: "Type @ inside the editor to link entities.",
     ed_linked_mentions: "Linked Mentions (Backlinks)",
+    ed_resurface: "From earlier notes",
 
     ed_search_placeholder: "Search notes, entities, or create...",
     ed_searching: "Searching...",
@@ -137,6 +138,8 @@ export const dict: Module = {
     ed_slash_upload_desc: "Image, PDF or audio from your device",
     ed_slash_vault_title: "From vault",
     ed_slash_vault_desc: "Insert a file already in your vault",
+    ed_slash_capsule_title: "Time capsule",
+    ed_slash_capsule_desc: "Message to future you (30d, 3m, date)",
 
     ed_searching_query: 'Searching "{query}"',
     ed_link_a_note: "Link a note",
@@ -255,6 +258,7 @@ export const dict: Module = {
     ed_untitled_entity: "Entidad sin título",
     ed_mention_hint: "Escribe @ dentro del editor para vincular entidades.",
     ed_linked_mentions: "Menciones vinculadas (Backlinks)",
+    ed_resurface: "De notas anteriores",
 
     ed_search_placeholder: "Buscar notas, entidades o crear...",
     ed_searching: "Buscando...",
@@ -340,6 +344,8 @@ export const dict: Module = {
     ed_slash_upload_desc: "Imagen, PDF o audio desde tu dispositivo",
     ed_slash_vault_title: "Desde el cofre",
     ed_slash_vault_desc: "Insertar un archivo del cofre",
+    ed_slash_capsule_title: "Cápsula del tiempo",
+    ed_slash_capsule_desc: "Mensaje para tu yo futuro (30d, 3m, fecha)",
 
     ed_searching_query: 'Buscando "{query}"',
     ed_link_a_note: "Vincular una nota",
@@ -458,6 +464,7 @@ export const dict: Module = {
     ed_untitled_entity: "Entidade sem título",
     ed_mention_hint: "Digite @ dentro do editor para vincular entidades.",
     ed_linked_mentions: "Menções vinculadas (Backlinks)",
+    ed_resurface: "Você já citou isso antes",
 
     ed_search_placeholder: "Buscar notas, entidades ou criar...",
     ed_searching: "Buscando...",
@@ -543,6 +550,8 @@ export const dict: Module = {
     ed_slash_upload_desc: "Imagem, PDF ou áudio do seu dispositivo",
     ed_slash_vault_title: "Do cofre",
     ed_slash_vault_desc: "Inserir um arquivo que já está no cofre",
+    ed_slash_capsule_title: "Lembrar (cápsula do tempo)",
+    ed_slash_capsule_desc: "Mensagem para o seu eu do futuro (30d, 3m, data)",
 
     ed_searching_query: 'Buscando "{query}"',
     ed_link_a_note: "Vincular uma nota",
@@ -661,6 +670,7 @@ export const dict: Module = {
     ed_untitled_entity: "Entité sans titre",
     ed_mention_hint: "Tapez @ dans l'éditeur pour lier des entités.",
     ed_linked_mentions: "Mentions liées (rétroliens)",
+    ed_resurface: "Dans vos notes précédentes",
 
     ed_search_placeholder: "Rechercher des notes, entités, ou créer...",
     ed_searching: "Recherche...",
@@ -746,6 +756,8 @@ export const dict: Module = {
     ed_slash_upload_desc: "Image, PDF ou audio depuis votre appareil",
     ed_slash_vault_title: "Depuis le coffre",
     ed_slash_vault_desc: "Insérer un fichier du coffre",
+    ed_slash_capsule_title: "Capsule temporelle",
+    ed_slash_capsule_desc: "Message à votre futur moi (30d, 3m, date)",
 
     ed_searching_query: 'Recherche de "{query}"',
     ed_link_a_note: "Lier une note",

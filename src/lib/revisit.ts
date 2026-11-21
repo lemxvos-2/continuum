@@ -85,3 +85,48 @@ export function coOccurrences(selfId: string, notes: { entityIds?: string[] }[],
   return [...counts].filter(([, c]) => c >= min).sort((a, b) => b[1] - a[1])
     .map(([id, count]) => ({ id, count, pct: Math.round((count / Math.max(notes.length, 1)) * 100) }));
 }
+
+/** Older notes sharing entities with the current one: most shared first, then oldest. */
+export function relatedByEntities<T extends { id: string; updatedAt: string; entityIds?: string[] }>(
+  currentId: string, entityIds: string[], notes: T[], limit = 3,
+) {
+  const mine = new Set(entityIds);
+  return notes.filter((n) => n.id !== currentId)
+    .map((n) => ({ note: n, shared: (n.entityIds ?? []).filter((e) => mine.has(e)).length }))
+    .filter((r) => r.shared > 0)
+    .sort((a, b) => b.shared - a.shared || a.note.updatedAt.localeCompare(b.note.updatedAt))
+    .slice(0, limit);
+}
+
+/** "30d", "3m", "1y" or "YYYY-MM-DD" → ISO date, or null. */
+export function capsuleDate(input: string, now: number): string | null {
+  const s = input.trim().toLowerCase();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/^(\d+)\s*([dmy])$/);
+  if (!m) return null;
+  const d = new Date(now), n = Number(m[1]);
+  if (m[2] === "d") d.setUTCDate(d.getUTCDate() + n);
+  else if (m[2] === "m") d.setUTCMonth(d.getUTCMonth() + n);
+  else d.setUTCFullYear(d.getUTCFullYear() + n);
+  return dayKey(d.getTime());
+}
+
+const CAPSULE = /^📬\s*(\d{4}-\d{2}-\d{2})\s*[—-]\s*(.*)$/;
+export interface Capsule { key: string; noteId: string; date: string; text: string }
+
+export function extractCapsules(noteId: string, content: unknown): Capsule[] {
+  const out: Capsule[] = [];
+  const walk = (node: TiptapNode) => {
+    if (node.type === "paragraph") {
+      const m = text(node).trim().match(CAPSULE);
+      if (m && m[2].trim()) out.push({ key: `cap:${noteId}:${m[1]}:${m[2].trim()}`, noteId, date: m[1], text: m[2].trim() });
+      return;
+    }
+    (node.content ?? []).forEach(walk);
+  };
+  walk(parseTiptapContent(content));
+  return out;
+}
+
+export const dueCapsules = (caps: Capsule[], dismissed: string[], now: number) =>
+  caps.filter((c) => c.date <= dayKey(now) && !dismissed.includes(c.key));

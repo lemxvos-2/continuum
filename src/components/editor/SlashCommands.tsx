@@ -9,6 +9,7 @@ import {
 } from "@/lib/heroicons";
 import type { Editor, Range } from "@tiptap/core";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { capsuleDate } from "@/lib/revisit";
 
 export interface SlashItem {
   titleKey: string;
@@ -60,6 +61,13 @@ const items: SlashItem[] = [
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run();
       window.dispatchEvent(new CustomEvent("continuum:vault-pick", { detail: { editor } }));
+    } },
+  { titleKey: "ed_slash_capsule_title", descKey: "ed_slash_capsule_desc", title: "Time capsule", description: "Remind future you (/lembrar 30d)", icon: Type, keywords: ["lembrar", "remind", "capsule", "capsula", "futuro"],
+    command: ({ editor, range }) => {
+      const when = window.prompt("30d, 3m, 1y ou AAAA-MM-DD", "30d");
+      const date = when ? capsuleDate(when, Date.now()) : null;
+      if (!date) return;
+      editor.chain().focus().deleteRange(range).insertContent({ type: "paragraph", content: [{ type: "text", text: `📬 ${date} — ` }] }).run();
     } },
 ];
 

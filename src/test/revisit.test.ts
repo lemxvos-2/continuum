@@ -41,3 +41,31 @@ describe("coOccurrences", () => {
     expect(coOccurrences("a", notes)).toEqual([{ id: "x", count: 3, pct: 60 }]);
   });
 });
+
+import { capsuleDate, dueCapsules, extractCapsules, relatedByEntities } from "@/lib/revisit";
+describe("time capsule", () => {
+  const now = Date.UTC(2026, 0, 1);
+  it("parses 30d, 3m and explicit dates", () => {
+    expect(capsuleDate("30d", now)).toBe("2026-01-31");
+    expect(capsuleDate("3m", now)).toBe("2026-04-01");
+    expect(capsuleDate("2027-01-01", now)).toBe("2027-01-01");
+    expect(capsuleDate("logo", now)).toBeNull();
+  });
+  it("shows a capsule only on or after its date", () => {
+    const caps = extractCapsules("n", { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "📬 2026-02-01 — Me arrependi?" }] }] });
+    expect(dueCapsules(caps, [], Date.UTC(2026, 0, 31))).toHaveLength(0);
+    expect(dueCapsules(caps, [], Date.UTC(2026, 1, 1))).toHaveLength(1);
+  });
+});
+describe("relatedByEntities", () => {
+  it("orders by shared entities then oldest, excluding current", () => {
+    const notes = [
+      { id: "cur", updatedAt: "2026-01-01", entityIds: ["a", "b"] },
+      { id: "new1", updatedAt: "2026-05-01", entityIds: ["a"] },
+      { id: "old1", updatedAt: "2025-01-01", entityIds: ["a"] },
+      { id: "both", updatedAt: "2026-06-01", entityIds: ["a", "b"] },
+      { id: "none", updatedAt: "2020-01-01", entityIds: ["z"] },
+    ];
+    expect(relatedByEntities("cur", ["a", "b"], notes).map((r) => r.note.id)).toEqual(["both", "old1", "new1"]);
+  });
+});

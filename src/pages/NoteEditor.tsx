@@ -39,6 +39,7 @@ import { queryClient } from "@/lib/query-client";
 import { qk, STALE } from "@/lib/queries";
 import { WorkspaceAssign } from "@/components/WorkspaceSwitcher";
 import { formatLocalizedDate } from "@/lib/date-format";
+import { relatedByEntities } from "@/lib/revisit";
 
 interface NoteData {
   id: string;
@@ -861,6 +862,25 @@ export default function NoteEditor() {
               </div>
               {id && <BacklinksPanel noteId={id} />}
             </div>
+            {id && note?.entityIds?.length ? (() => {
+              const all = queryClient.getQueryData<NoteData[]>(qk.notes()) ?? [];
+              const rel = relatedByEntities(id, note.entityIds, all);
+              if (!rel.length) return null;
+              return (
+                <div className="border-t border-border/5 pt-4">
+                  <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">↺ {t("ed_resurface")}</div>
+                  <ul className="space-y-1">
+                    {rel.map((r) => (
+                      <li key={r.note.id}>
+                        <button className="w-full truncate text-left text-xs text-foreground hover:text-primary" onClick={() => navigate(`/notes/${r.note.id}`)}>
+                          {r.note.title || "—"} <span className="text-muted-foreground">· {formatLocalizedDate(r.note.updatedAt, language)}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })() : null}
           </div>
         </aside>
 
