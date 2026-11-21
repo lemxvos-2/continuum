@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import SmoothDrawer from "@/components/ui/smooth-drawer";
+import { isRevisitEnabled, setRevisitEnabled } from "@/lib/revisit-pref";
 import { notesApi } from "@/lib/api";
 import { queryClient } from "@/lib/query-client";
 import { qk } from "@/lib/queries";
@@ -16,10 +18,10 @@ import {
 interface NoteLite { id: string; title: string; updatedAt: string; entityIds?: string[] }
 
 const L = {
-  pt: { capsule: "Mensagem do seu eu do passado", open: "Abrir", reply: "Responder hoje", shuffle: "1 minuto por dia", relevant: "Ainda relevante", thought: "Adicionar pensamento", archive: "Desapegar", skip: "Pular", save: "Salvar", loops: "pensamentos incompletos", resolve: "Resolver", snooze: "Adiar", dismiss: "Descartar", ph: "Seu pensamento de hoje…" },
-  en: { capsule: "A message from your past self", open: "Open", reply: "Reply today", shuffle: "1 minute a day", relevant: "Still relevant", thought: "Add thought", archive: "Let go", skip: "Skip", save: "Save", loops: "unfinished thoughts", resolve: "Resolve", snooze: "Snooze", dismiss: "Dismiss", ph: "Today's thought…" },
-  es: { capsule: "Mensaje de tu yo del pasado", open: "Abrir", reply: "Responder hoy", shuffle: "1 minuto al día", relevant: "Aún relevante", thought: "Añadir idea", archive: "Soltar", skip: "Saltar", save: "Guardar", loops: "pensamientos incompletos", resolve: "Resolver", snooze: "Posponer", dismiss: "Descartar", ph: "Tu idea de hoy…" },
-  fr: { capsule: "Message de votre moi passé", open: "Ouvrir", reply: "Répondre aujourd'hui", shuffle: "1 minute par jour", relevant: "Toujours pertinent", thought: "Ajouter une pensée", archive: "Lâcher prise", skip: "Passer", save: "Enregistrer", loops: "pensées inachevées", resolve: "Résoudre", snooze: "Reporter", dismiss: "Ignorer", ph: "Votre pensée du jour…" },
+  pt: { title: "Revisão do dia", later: "Resolver depois", off: "Desativar", capsule: "Mensagem do seu eu do passado", open: "Abrir", reply: "Responder hoje", shuffle: "1 minuto por dia", relevant: "Ainda relevante", thought: "Adicionar pensamento", archive: "Desapegar", skip: "Pular", save: "Salvar", loops: "pensamentos incompletos", resolve: "Resolver", snooze: "Adiar", dismiss: "Descartar", ph: "Seu pensamento de hoje…" },
+  en: { title: "Daily review", later: "Resolve later", off: "Turn off", capsule: "A message from your past self", open: "Open", reply: "Reply today", shuffle: "1 minute a day", relevant: "Still relevant", thought: "Add thought", archive: "Let go", skip: "Skip", save: "Save", loops: "unfinished thoughts", resolve: "Resolve", snooze: "Snooze", dismiss: "Dismiss", ph: "Today's thought…" },
+  es: { title: "Revisión del día", later: "Resolver después", off: "Desactivar", capsule: "Mensaje de tu yo del pasado", open: "Abrir", reply: "Responder hoy", shuffle: "1 minuto al día", relevant: "Aún relevante", thought: "Añadir idea", archive: "Soltar", skip: "Saltar", save: "Guardar", loops: "pensamientos incompletos", resolve: "Resolver", snooze: "Posponer", dismiss: "Descartar", ph: "Tu idea de hoy…" },
+  fr: { title: "Revue du jour", later: "Plus tard", off: "Désactiver", capsule: "Message de votre moi passé", open: "Ouvrir", reply: "Répondre aujourd'hui", shuffle: "1 minute par jour", relevant: "Toujours pertinent", thought: "Ajouter une pensée", archive: "Lâcher prise", skip: "Passer", save: "Enregistrer", loops: "pensées inachevées", resolve: "Résoudre", snooze: "Reporter", dismiss: "Ignorer", ph: "Votre pensée du jour…" },
 };
 
 const load = <T,>(k: string, d: T): T => { try { return JSON.parse(localStorage.getItem(k) || "") as T; } catch { return d; } };
@@ -49,6 +51,9 @@ export function RevisitCard({ notes }: { notes: NoteLite[] }) {
   const [thought, setThought] = useState<string | null>(null);
   const [loops, setLoops] = useState<OpenLoop[]>([]);
   const [caps, setCaps] = useState<Capsule[]>([]);
+  const [enabled, setEnabled] = useState(isRevisitEnabled);
+  const seenKey = `continuum:revisit:seen:${dayKey(now)}`;
+  const [open, setOpen] = useState(false);
   const [reply, setReply] = useState<{ key: string; text: string } | null>(null);
 
   const pick = useMemo(() => pickShuffle(notes, shuffle, String(ws), skip, now), [notes, shuffle, ws, skip]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -98,10 +103,21 @@ export function RevisitCard({ notes }: { notes: NoteLite[] }) {
     updLoops({ ...loopState, dismissed: [...loopState.dismissed, c.key] });
   };
 
-  if (!pick && !shown.length && !dueCaps.length) return null;
+  const has = !!pick || shown.length > 0 || dueCaps.length > 0;
+  useEffect(() => {
+    if (enabled && has && !localStorage.getItem(seenKey)) { setOpen(true); localStorage.setItem(seenKey, "1"); }
+  }, [enabled, has, seenKey]);
+
+  if (!enabled || !has) return null;
+  const count = (pick ? 1 : 0) + shown.length + dueCaps.length;
 
   return (
-    <section className="mb-6 space-y-3">
+    <>
+    <button type="button" onClick={() => setOpen(true)} className="mb-4 inline-flex items-center gap-2 rounded-full border border-border/20 bg-card/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
+      ✨ {t.title} <span className="rounded-full bg-primary/15 px-1.5 text-primary">{count}</span>
+    </button>
+    <SmoothDrawer open={open} onOpenChange={setOpen} title={t.title}>
+    <section className="space-y-3 pb-2">
       {dueCaps.map((c) => (
         <div key={c.key} className="rounded-xl border border-primary/30 bg-card/50 p-4">
           <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">📬 {t.capsule} · {title(c.noteId)}</p>
@@ -160,6 +176,12 @@ export function RevisitCard({ notes }: { notes: NoteLite[] }) {
           </ul>
         </div>
       )}
+      <div className="flex gap-2 pt-2">
+        <Button className="flex-1" variant="secondary" onClick={() => setOpen(false)}>{t.later}</Button>
+        <Button className="flex-1" variant="ghost" onClick={() => { setRevisitEnabled(false); setEnabled(false); setOpen(false); }}>{t.off}</Button>
+      </div>
     </section>
+    </SmoothDrawer>
+    </>
   );
 }

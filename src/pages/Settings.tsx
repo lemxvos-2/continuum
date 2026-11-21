@@ -32,6 +32,29 @@ import { AppThemeSelector } from "@/components/AppThemeSelector";
 import { useExtrasText, useDeletionStatus } from "@/components/AccountExtras";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatLocalizedDate } from "@/lib/date-format";
+import { Switch } from "@/components/ui/switch";
+import { isRevisitEnabled, setRevisitEnabled } from "@/lib/revisit-pref";
+
+const REVISIT_LABEL: Record<Lang, [string, string]> = {
+  pt: ["Revisão do dia", "Resgata notas antigas e pensamentos incompletos"],
+  en: ["Daily review", "Resurfaces old notes and unfinished thoughts"],
+  es: ["Revisión del día", "Recupera notas antiguas e ideas incompletas"],
+  fr: ["Revue du jour", "Fait ressurgir notes anciennes et pensées inachevées"],
+};
+
+function RevisitToggle({ lang }: { lang: Lang }) {
+  const [on, setOn] = useState(isRevisitEnabled);
+  const [label, desc] = REVISIT_LABEL[lang] ?? REVISIT_LABEL.en;
+  return (
+    <label className="-mx-3 flex h-16 cursor-pointer items-center gap-4 rounded-xl px-3 hover:bg-secondary/60">
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium text-foreground/80">{label}</span>
+        <span className="mt-0.5 block truncate text-xs text-muted-foreground">{desc}</span>
+      </span>
+      <Switch checked={on} onCheckedChange={(v) => { setRevisitEnabled(v); setOn(v); }} />
+    </label>
+  );
+}
 
 /* ------------------------------------------------------------------ */
 /* Constants                                                           */
@@ -268,6 +291,7 @@ export default function SettingsPage() {
           <ActionRow icon={PencilSquareIcon} label={t("nav_editorSettings")} href="/editor" />
           <LanguageSelector />
           <AppThemeSelector />
+          <RevisitToggle lang={language as Lang} />
         </Section>
 
         {/* 3. Dados e Integrações */}
