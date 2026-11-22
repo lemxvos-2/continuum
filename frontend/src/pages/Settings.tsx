@@ -52,7 +52,11 @@ function RevisitToggle({ lang }: { lang: Lang }) {
         <span className="block text-sm font-medium text-foreground/80">{label}</span>
         <span className="mt-0.5 block truncate text-xs text-muted-foreground">{desc}</span>
       </span>
-      <Switch checked={on} onCheckedChange={(v) => { setRevisitEnabled(v); setOn(v); }} />
+      <Switch
+        checked={on}
+        onCheckedChange={(v) => { setRevisitEnabled(v); setOn(v); }}
+        className="data-[state=unchecked]:bg-muted-foreground/30"
+      />
     </label>
   );
 }
@@ -292,8 +296,8 @@ export default function SettingsPage() {
           <ActionRow icon={PencilSquareIcon} label={t("nav_editorSettings")} href="/editor" />
           <LanguageSelector />
           <AppThemeSelector />
-          <RevisitToggle lang={language as Lang} />
           <EmailPreferenceSelector />
+          <RevisitToggle lang={language as Lang} />
         </Section>
 
         {/* 3. Dados e Integrações */}

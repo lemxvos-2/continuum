@@ -1,16 +1,7 @@
 /**
  * Guarded Service Worker registration for Continuum.
- * Never registers in dev, Lovable preview, iframe, or when ?sw=off.
+ * Never registers in dev, an iframe, or when ?sw=off.
  */
-
-const PREVIEW_HOST_SUFFIXES = [
-  ".lovableproject.com",
-  ".lovableproject-dev.com",
-  ".lovable.app",
-  ".beta.lovable.dev",
-];
-
-const PREVIEW_HOST_PREFIXES = ["id-preview--", "preview--"];
 
 function shouldSkipRegistration(): { skip: boolean; reason?: string } {
   if (typeof window === "undefined") return { skip: true, reason: "no-window" };
@@ -20,18 +11,6 @@ function shouldSkipRegistration(): { skip: boolean; reason?: string } {
   try {
     const url = new URL(window.location.href);
     if (url.searchParams.get("sw") === "off") return { skip: true, reason: "kill-switch" };
-    const host = url.hostname;
-    if (PREVIEW_HOST_PREFIXES.some((p) => host.startsWith(p))) {
-      return { skip: true, reason: "preview-prefix" };
-    }
-    if (
-      host === "lovableproject.com" ||
-      host === "lovableproject-dev.com" ||
-      host === "beta.lovable.dev" ||
-      PREVIEW_HOST_SUFFIXES.some((s) => host.endsWith(s))
-    ) {
-      return { skip: true, reason: "preview-host" };
-    }
   } catch {
     /* ignore */
   }

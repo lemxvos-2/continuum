@@ -15,7 +15,7 @@ import { toast } from "@/hooks/use-toast";
 import landingEditor from "@/assets/landing-editor.png";
 import landingInsights from "@/assets/landing-insights.jpg";
 
-const SITE_URL = "https://continuumnodes.lovable.app/";
+const SITE_URL = "https://continuum.onl/";
 
 export default function LandingPage() {
   const [authOpen, setAuthOpen] = useState(false);
