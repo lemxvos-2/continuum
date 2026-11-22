@@ -31,7 +31,8 @@ export default defineConfig(({ mode }) => {
       "import.meta.env.VITE_BUILD_VERSION": JSON.stringify(buildVersion),
     },
     build: {
-      outDir: 'dist',
+      outDir: path.resolve(__dirname, "../dist"),
+      emptyOutDir: true,
       rollupOptions: {
         input: {
           main: path.resolve(__dirname, 'index.html'),

@@ -1,0 +1,11 @@
+{
+  "name": "continuum",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=continuum-frontend",
+    "build": "npm run build --workspace=continuum-frontend"
+  }
+}
