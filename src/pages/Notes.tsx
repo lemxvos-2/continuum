@@ -780,6 +780,7 @@ export default function Notes() {
                   <h1 className="mt-2 font-serif text-5xl tracking-tight text-foreground">{t("notes_title")}</h1>
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-2">
+                  <RevisitCard notes={notes} compact />
                   <Button
                     onClick={handleCreate}
                     className="h-auto gap-2 rounded-full bg-foreground px-6 py-3 text-[15px] font-medium text-background shadow-[0_10px_30px_rgba(0,0,0,0.45)] transition active:scale-95 hover:bg-foreground disabled:opacity-60"
@@ -792,8 +793,6 @@ export default function Notes() {
               </div>
               {limitMsg && <p className="mt-3 text-xs text-muted-foreground">{limitMsg}</p>}
             </header>
-
-            {!selectMode && !search.trim() && <RevisitCard notes={notes} />}
 
             {/* Mobile: search + view chips */}
             <div className={selectMode ? "hidden lg:mb-5 lg:block lg:space-y-3" : "mb-5 space-y-3"}>

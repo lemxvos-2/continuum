@@ -42,7 +42,7 @@ async function detail(id: string) {
   return d;
 }
 
-export function RevisitCard({ notes }: { notes: NoteLite[] }) {
+export function RevisitCard({ notes, compact = false }: { notes: NoteLite[]; compact?: boolean }) {
   const { language } = useLanguage();
   const t = L[language as keyof typeof L] ?? L.en;
   const navigate = useNavigate();
@@ -123,11 +123,23 @@ export function RevisitCard({ notes }: { notes: NoteLite[] }) {
 
   return (
     <>
-    <button type="button" onClick={() => setOpen(true)} className="group mb-4 inline-flex items-center gap-2 rounded-full border border-border/20 bg-card/50 py-1.5 pl-2.5 pr-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground">
-      <SparklesIcon className="h-4 w-4 text-primary" />
-      {t.title}
-      <span className="min-w-5 rounded-full bg-primary/15 px-1.5 py-0.5 text-center text-[10px] font-medium text-primary">{count}</span>
-    </button>
+    {compact ? (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={t.title}
+        title={t.title}
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border/20 bg-card/50 text-muted-foreground shadow-[0_10px_30px_rgba(0,0,0,0.24)] transition active:scale-95 hover:border-primary/30 hover:text-foreground"
+      >
+        <SparklesIcon className="h-5 w-5 text-primary" />
+      </button>
+    ) : (
+      <button type="button" onClick={() => setOpen(true)} className="group mb-4 inline-flex items-center gap-2 rounded-full border border-border/20 bg-card/50 py-1.5 pl-2.5 pr-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground">
+        <SparklesIcon className="h-4 w-4 text-primary" />
+        {t.title}
+        <span className="min-w-5 rounded-full bg-primary/15 px-1.5 py-0.5 text-center text-[10px] font-medium text-primary">{count}</span>
+      </button>
+    )}
     <SmoothDrawer open={open} onOpenChange={setOpen} title={t.title} description={t.sub}>
     <section className="space-y-4 px-5 pb-5">
       {dueCaps.map((c) => (
