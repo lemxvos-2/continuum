@@ -62,7 +62,7 @@ export function LanguageSelector({ compact = false }: Props) {
   }
 
   return (
-    <div className="flex h-16 items-center gap-4 border-b border-border/10 py-0 transition-colors last:border-b-0 hover:text-foreground">
+    <div className="flex h-16 items-center gap-4 py-0 transition-colors hover:text-foreground">
       <GlobeAltIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1 text-left">
         <p className="text-sm font-medium text-foreground/80">{t("profile_language")}</p>

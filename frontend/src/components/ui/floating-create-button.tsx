@@ -65,7 +65,11 @@ export function FloatingCreateButton({
       )}
       style={{ bottom: "calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 5.25rem)" }}
     >
-      {leadingAction}
+      {leadingAction && (
+        <div className="pointer-events-auto">
+          {leadingAction}
+        </div>
+      )}
       <button
         type="button"
         onPointerDown={(event) => {

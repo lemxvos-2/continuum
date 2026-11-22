@@ -113,7 +113,7 @@ export function RevisitCard({ notes, compact = false }: { notes: NoteLite[]; com
     if (enabled && has && !localStorage.getItem(seenKey)) { setOpen(true); localStorage.setItem(seenKey, "1"); }
   }, [enabled, has, seenKey]);
 
-  if (!enabled || !has) return null;
+  if (!enabled) return null;
   const count = (pick ? 1 : 0) + shown.length + dueCaps.length;
   const dismissKey = (key: string) => updLoops({ ...loopState, dismissed: [...loopState.dismissed, key] });
   const chip = "h-8 gap-1.5 rounded-full px-3 text-xs";

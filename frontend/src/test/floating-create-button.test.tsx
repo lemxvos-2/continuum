@@ -44,3 +44,19 @@ it("keeps the normal create action for a short press and on desktop", () => {
   expect(onClick).toHaveBeenCalledOnce();
   expect(onLongPress).not.toHaveBeenCalled();
 });
+
+it("allows a leading review action to receive pointer events", () => {
+  const leadingClick = vi.fn();
+  render(
+    <FloatingCreateButton
+      label="New note"
+      onClick={vi.fn()}
+      leadingAction={<button type="button" onClick={leadingClick}>Review</button>}
+    />,
+  );
+
+  const review = screen.getByRole("button", { name: "Review" });
+  expect(review.parentElement).toHaveClass("pointer-events-auto");
+  fireEvent.click(review);
+  expect(leadingClick).toHaveBeenCalledOnce();
+});
