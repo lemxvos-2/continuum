@@ -8,6 +8,7 @@ interface FloatingCreateButtonProps {
   icon?: React.ReactNode;
   disabled?: boolean;
   className?: string;
+  leadingAction?: React.ReactNode;
 }
 
 /**
@@ -21,6 +22,7 @@ export function FloatingCreateButton({
   icon,
   disabled,
   className,
+  leadingAction,
 }: FloatingCreateButtonProps) {
   const [visible, setVisible] = useState(true);
   const [pressing, setPressing] = useState(false);
@@ -57,12 +59,13 @@ export function FloatingCreateButton({
   return (
     <div
       className={cn(
-        "pointer-events-none fixed inset-x-0 z-30 flex justify-end px-4 transition-all duration-300 lg:hidden",
+        "pointer-events-none fixed inset-x-0 z-30 flex items-center justify-end gap-2 px-4 transition-all duration-300 lg:hidden",
         visible ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0",
         className,
       )}
       style={{ bottom: "calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) + 5.25rem)" }}
     >
+      {leadingAction}
       <button
         type="button"
         onPointerDown={(event) => {

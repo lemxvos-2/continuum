@@ -1139,6 +1139,7 @@ export default function Notes() {
         onClick={handleCreate}
         onLongPress={() => setQuickCaptureOpen(true)}
         icon={<Plus className="h-4 w-4" />}
+        leadingAction={<RevisitCard notes={notes} compact />}
       />
       <QuickCapture open={quickCaptureOpen} onOpenChange={setQuickCaptureOpen} showTrigger={false} />
 

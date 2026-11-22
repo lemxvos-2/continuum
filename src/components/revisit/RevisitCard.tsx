@@ -129,9 +129,9 @@ export function RevisitCard({ notes, compact = false }: { notes: NoteLite[]; com
         onClick={() => setOpen(true)}
         aria-label={t.title}
         title={t.title}
-        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border/20 bg-card/50 text-muted-foreground shadow-[0_10px_30px_rgba(0,0,0,0.24)] transition active:scale-95 hover:border-primary/30 hover:text-foreground"
+        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-foreground text-background shadow-[0_10px_30px_rgba(0,0,0,0.45)] transition active:scale-95 hover:bg-foreground"
       >
-        <SparklesIcon className="h-5 w-5 text-primary" />
+        <ArrowPathIcon className="h-5 w-5" />
       </button>
     ) : (
       <button type="button" onClick={() => setOpen(true)} className="group mb-4 inline-flex items-center gap-2 rounded-full border border-border/20 bg-card/50 py-1.5 pl-2.5 pr-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground">
