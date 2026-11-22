@@ -27,7 +27,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   setTokens: (accessToken: string, refreshToken?: string) => void;
   refreshUser: () => Promise<void>;
-  updatePreferences: (preferences: Partial<Pick<AppUser, "theme" | "language">>) => Promise<void>;
+  updatePreferences: (preferences: Partial<Pick<AppUser, "theme" | "language" | "emailPreference">>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -84,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: data.email ?? "",
           theme: isAppTheme(data.theme) ? data.theme : DEFAULT_APP_THEME,
           language: isUserLanguage(data.language) ? data.language : undefined,
+          emailPreference: data.emailPreference === "NONE" || data.emailPreference === "ESSENTIAL" ? data.emailPreference : "ALL",
           plan: data.plan ?? data.effectivePlan ?? "FREE",
           emailVerified: data.emailVerified ?? true,
           createdAt: data.createdAt ?? data.created_at ?? data.memberSince,
@@ -115,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updatePreferences = async (preferences: Partial<Pick<AppUser, "theme" | "language">>) => {
+  const updatePreferences = async (preferences: Partial<Pick<AppUser, "theme" | "language" | "emailPreference">>) => {
     if (!user) throw new Error("You must be signed in to update this preference.");
     const previousUser = user;
     const nextUser = { ...user, ...preferences };

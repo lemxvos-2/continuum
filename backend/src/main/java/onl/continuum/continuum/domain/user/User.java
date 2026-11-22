@@ -64,6 +64,13 @@ public class User {
 
     private String language;
 
+    /** Email delivery preference: NONE, ESSENTIAL or ALL. */
+    @Builder.Default
+    private String emailPreference = "ALL";
+
+    public String getEmailPreference() { return emailPreference == null ? "ALL" : emailPreference; }
+    public void setEmailPreference(String emailPreference) { this.emailPreference = emailPreference; }
+
     @Builder.Default
     private int entityCount = 0;
 

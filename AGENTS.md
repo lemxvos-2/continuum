@@ -13,3 +13,4 @@
 - Mount quick capture in the Notes search toolbar, not the shared app layout, so it cannot overlap floating creation actions or appear on other pages.
 - Apply the active-workspace filter (RequestWorkspace.matches) to every read path — lists before pagination, backlinks, entity notes/connections — and include the workspace in server cache keys and client suggestion caches, so no data leaks between workspaces.
 - Keep the admin UI in the standalone admin/ app (destined for a private repo); /api/admin accepts only a normal JWT from the single account matching ADMIN_EMAIL and returns 404 when unset, so self-hosted installs expose nothing.
+- Classify every backend email with EmailCategory (ESSENTIAL or ALL) and gate sending with EmailCategory.allows(user.getEmailPreference(), ...) so the user's NONE/ESSENTIAL/ALL choice is always respected.

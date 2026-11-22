@@ -393,6 +393,7 @@ export const authApi = {
     username?: string;
     theme?: "CLASSIC" | "CHARCOAL" | "LIGHT";
     language?: "en" | "es" | "pt" | "fr";
+    emailPreference?: "NONE" | "ESSENTIAL" | "ALL";
   }) => api.patch("/api/account/me", data),
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post("/api/account/password/change", { currentPassword, newPassword }),

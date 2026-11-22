@@ -77,6 +77,14 @@ public class AccountController {
             throw new BadRequestException("language must be en, es, pt, or fr");
         }
 
+        String emailPreference = body.get("emailPreference");
+        if (emailPreference != null && !Set.of("NONE", "ESSENTIAL", "ALL").contains(emailPreference)) {
+            throw new BadRequestException("emailPreference must be NONE, ESSENTIAL, or ALL");
+        }
+        if (emailPreference != null) {
+            authService.updateEmailPreference(user.getUserId(), emailPreference);
+        }
+
         String username = body.get("username");
         if (username != null && !username.isBlank()) {
             authService.updateUsername(user.getUserId(), username.trim());

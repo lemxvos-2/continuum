@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import onl.continuum.continuum.domain.note.Note;
 import onl.continuum.continuum.domain.user.User;
 import onl.continuum.continuum.domain.user.UserRepository;
+import onl.continuum.continuum.infra.email.EmailCategory;
 import onl.continuum.continuum.infra.email.EmailService;
 import onl.continuum.continuum.infra.persistence.NoteRepository;
 import onl.continuum.continuum.infra.vault.VaultStorageService;
@@ -98,6 +99,7 @@ public class MemoriesService {
 
     private void sendForUser(User user, LocalDate today) {
         if (user.getEmail() == null || user.getEmail().isBlank()) return;
+        if (!EmailCategory.allows(user.getEmailPreference(), EmailCategory.ALL)) return;
         // One email per user per day at most: the single strongest note hitting a big milestone today.
         Optional<Note> best = noteRepo.findByUserId(user.getId()).stream()
                 .filter(n -> n.getCreatedAt() != null && connections(n) >= MIN_CONNECTIONS_EMAIL)

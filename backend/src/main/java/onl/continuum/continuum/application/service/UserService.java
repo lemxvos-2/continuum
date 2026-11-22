@@ -103,7 +103,9 @@ public class UserService {
             new Update().set("deletionRequestedAt", now), User.class);
         java.time.Instant purgeAt = now.plus(java.time.Duration.ofDays(DELETION_GRACE_DAYS));
         if (emailService != null) {
-            userRepository.findById(userId).ifPresent(u ->
+            userRepository.findById(userId)
+                .filter(u -> onl.continuum.continuum.infra.email.EmailCategory.allows(u.getEmailPreference(), onl.continuum.continuum.infra.email.EmailCategory.ESSENTIAL))
+                .ifPresent(u ->
                 emailService.sendDeletionScheduled(u.getEmail(), u.getUsername(), purgeAt, u.getLanguage()));
         }
         return purgeAt;
@@ -161,7 +163,7 @@ public class UserService {
             mongoTemplate.remove(byUser, c);
         }
         userRepository.deleteById(userId);
-        if (emailService != null) {
+        if (emailService != null && onl.continuum.continuum.infra.email.EmailCategory.allows(user.getEmailPreference(), onl.continuum.continuum.infra.email.EmailCategory.ESSENTIAL)) {
             emailService.sendAccountDeleted(user.getEmail(), user.getUsername(), user.getLanguage());
         }
     }

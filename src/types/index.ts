@@ -3,6 +3,7 @@
 export type Plan = "FREE" | "VISION";
 import type { AppTheme } from "@/lib/app-theme";
 export type { AppTheme } from "@/lib/app-theme";
+export type EmailPreference = "NONE" | "ESSENTIAL" | "ALL";
 export type UserLanguage = "en" | "es" | "pt" | "fr";
 
 export interface User {
@@ -14,6 +15,7 @@ export interface User {
   createdAt: string;
   theme: AppTheme;
   language?: UserLanguage;
+  emailPreference?: EmailPreference;
   maxEntities?: number;
   maxNotes?: number;
   historyDays?: number;

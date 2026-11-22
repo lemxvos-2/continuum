@@ -189,6 +189,7 @@ public class AuthService {
 
     private void sendWelcomeAfterCommit(User user) {
         if (emailService == null) return;
+        if (!onl.continuum.continuum.infra.email.EmailCategory.allows(user.getEmailPreference(), onl.continuum.continuum.infra.email.EmailCategory.ESSENTIAL)) return;
 
         Runnable send = () -> emailService.sendWelcome(user.getEmail(), user.getUsername(), user.getLanguage());
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -277,6 +278,14 @@ public class AuthService {
         user.setTheme(user.getTheme());
         if (theme != null) user.setTheme(theme);
         if (language != null) user.setLanguage(language);
+        user.setUpdatedAt(Instant.now());
+        users.save(user);
+    }
+
+    @Transactional
+    public void updateEmailPreference(String userId, String preference) {
+        User user = users.findById(userId).orElseThrow(() -> new NotFoundException("User not found"));
+        user.setEmailPreference(preference);
         user.setUpdatedAt(Instant.now());
         users.save(user);
     }

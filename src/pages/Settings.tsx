@@ -29,6 +29,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { AppThemeSelector } from "@/components/AppThemeSelector";
+import { EmailPreferenceSelector } from "@/components/EmailPreferenceSelector";
 import { useExtrasText, useDeletionStatus } from "@/components/AccountExtras";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatLocalizedDate } from "@/lib/date-format";
@@ -292,6 +293,7 @@ export default function SettingsPage() {
           <LanguageSelector />
           <AppThemeSelector />
           <RevisitToggle lang={language as Lang} />
+          <EmailPreferenceSelector />
         </Section>
 
         {/* 3. Dados e Integrações */}
