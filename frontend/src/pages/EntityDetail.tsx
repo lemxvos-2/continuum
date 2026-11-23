@@ -71,6 +71,7 @@ export default function EntityDetail() {
   const [newDescription, setNewDescription] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [showAllNotes, setShowAllNotes] = useState(false);
+  const [pair, setPair] = useState<string | null>(null);
   const [showAllEntities, setShowAllEntities] = useState(false);
   const [trackingDateBusy, setTrackingDateBusy] = useState(false);
   const [relatedNotes, setRelatedNotes] = useState<RelatedNote[]>(() => id ? queryClient.getQueryData<RelatedNote[]>(qk.entityNotes(id)) ?? [] : []);
@@ -405,11 +406,24 @@ export default function EntityDetail() {
           <EntitySection title={label}>
             <div className="flex flex-wrap gap-2 px-1">
               {co.map((c) => (
-                <Button key={c.id} variant="outline" size="sm" className="rounded-full" onClick={() => navigate(`/entities/${c.id}`)}>
+                <Button key={c.id} variant={pair === c.id ? "default" : "outline"} size="sm" className="rounded-full" aria-pressed={pair === c.id} onClick={() => setPair(pair === c.id ? null : c.id)}>
                   {names.get(c.id)} <span className="text-muted-foreground">{c.pct}%</span>
                 </Button>
               ))}
             </div>
+            {pair && (
+              <div className="px-1 pt-2">
+                {relatedNotes.filter((n) => n.entityIds?.includes(pair)).map((note) => (
+                  <EntityLinkRow
+                    key={note.id}
+                    icon={<StickyNote className="h-3.5 w-3.5" />}
+                    title={note.title || t("notes_untitled")}
+                    meta={t("ent_updated", { date: formatLocalizedDate(note.updatedAt, language) })}
+                    onClick={() => navigate(`/notes/${note.id}`)}
+                  />
+                ))}
+              </div>
+            )}
           </EntitySection>
         );
       })()}

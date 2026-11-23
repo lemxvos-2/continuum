@@ -73,11 +73,6 @@ export function snooze(state: LoopState, key: string, now: number): LoopState {
   return { ...state, snoozed: { ...state.snoozed, [key]: now + SNOOZE_DAYS * DAY } };
 }
 
-export function appendThought(content: unknown, thought: string, date: string): TiptapNode {
-  const doc = parseTiptapContent(content);
-  return { ...doc, content: [...(doc.content ?? []), { type: "paragraph", content: [{ type: "text", text: `${date} — ${thought}` }] }] };
-}
-
 /** Entities co-occurring with `selfId` in at least `min` notes; pct = shared / notes of self. */
 export function coOccurrences(selfId: string, notes: { entityIds?: string[] }[], min = 3) {
   const counts = new Map<string, number>();
