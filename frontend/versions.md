@@ -4,6 +4,17 @@ Every notable change to Continuum, from the first release to the latest version.
 
 ---
 
+v1.4.2 — Nov 23, 2026
+
+- Notes: Added a daily review drawer that resurfaces one old note per day using spaced repetition (7 → 30 → 90 → 180 days), with a preview, its connected entities, and quick actions to open, keep relevant, skip or stop suggesting it.
+- Notes: Added open-loops detection that finds unfinished checklists, unanswered questions and thoughts marked TODO/DÚVIDA/IDEIA/DECIDIR older than 7 days, with actions to open, snooze for 14 days or mark as solved.
+- Editor: Added a /lembrar time capsule command (e.g. /lembrar 30d, 3m or a date) that reopens the message on the scheduled day in the daily review.
+- Entities: Added an "Often appears with" section showing entities that co-occur in the same notes, with a click to list the notes where both appear.
+- Editor: Added a side panel resurfacing older notes that share the same entities as the one being written.
+- Settings: Added a switch to turn the daily review on or off.
+
+---
+
 v1.4.1 — Nov XX, 2026
 
 - Workspaces: Switching workspaces now refreshes the app automatically (web, PWA and Android app).
