@@ -6,6 +6,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=continuum-frontend",
-    "build": "npm run build --workspace=continuum-frontend"
+    "build": "npm run build --workspace=continuum-frontend",
+    "build:dev": "npm run build:dev --workspace=continuum-frontend"
   }
 }
